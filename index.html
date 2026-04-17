@@ -1,850 +1,996 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>DEW Flapper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Montserrat:ital,wght@1,900&family=Press+Start+2P&display=swap');
+      @import url("https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Montserrat:ital,wght@1,900&family=Press+Start+2P&display=swap");
 
-        body {
-            background-color: #050505;
-            color: white;
-            font-family: 'Montserrat', sans-serif;
-            touch-action: none;
-            /* Prevent scroll on touch */
-            overflow: hidden;
-        }
+      body {
+        background-color: #050505;
+        color: white;
+        font-family: "Montserrat", sans-serif;
+        touch-action: none;
+        /* Prevent scroll on touch */
+        overflow: hidden;
+      }
 
-        .dew-text {
-            font-family: 'Black Ops One', cursive;
-            background: linear-gradient(to bottom, #ffffff, #88ff00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
-            filter: drop-shadow(0px 0px 5px rgba(136, 255, 0, 0.8));
-        }
+      .dew-text {
+        font-family: "Black Ops One", cursive;
+        background: linear-gradient(to bottom, #ffffff, #88ff00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        filter: drop-shadow(0px 0px 5px rgba(136, 255, 0, 0.8));
+      }
 
-        .neon-border {
-            box-shadow: 0 0 10px #88ff00, inset 0 0 10px #88ff00;
-            border: 2px solid #88ff00;
-        }
+      .neon-border {
+        box-shadow:
+          0 0 10px #88ff00,
+          inset 0 0 10px #88ff00;
+        border: 2px solid #88ff00;
+      }
 
-        .btn-dew {
-            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
-            border: 2px solid #333;
-            color: #555;
-            transition: all 0.1s;
-        }
+      .btn-dew {
+        background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+        border: 2px solid #333;
+        color: #555;
+        transition: all 0.1s;
+      }
 
-        .btn-dew.active {
-            border-color: #88ff00;
-            color: #88ff00;
-            box-shadow: 0 0 15px rgba(136, 255, 0, 0.5), inset 0 0 10px rgba(136, 255, 0, 0.2);
-            transform: scale(1.05);
-        }
+      .btn-dew.active {
+        border-color: #88ff00;
+        color: #88ff00;
+        box-shadow:
+          0 0 15px rgba(136, 255, 0, 0.5),
+          inset 0 0 10px rgba(136, 255, 0, 0.2);
+        transform: scale(1.05);
+      }
 
-        .btn-dew:active {
-            transform: scale(0.95);
-        }
+      .btn-dew:active {
+        transform: scale(0.95);
+      }
 
-        /* Flavor Button Colors - Updated to pure green/yellow/teal Dew branding */
-        #btn-D.active {
-            border-color: #88ff00;
-            color: #88ff00;
-            box-shadow: 0 0 15px rgba(136, 255, 0, 0.5);
-        }
+      /* Flavor Button Colors - Updated to pure green/yellow/teal Dew branding */
+      #btn-D.active {
+        border-color: #88ff00;
+        color: #88ff00;
+        box-shadow: 0 0 15px rgba(136, 255, 0, 0.5);
+      }
 
-        #btn-E.active {
-            border-color: #00ff44;
-            color: #00ff44;
-            box-shadow: 0 0 15px rgba(0, 255, 68, 0.5);
-        }
+      #btn-E.active {
+        border-color: #00ff44;
+        color: #00ff44;
+        box-shadow: 0 0 15px rgba(0, 255, 68, 0.5);
+      }
 
-        #btn-W.active {
-            border-color: #ccff00;
-            color: #ccff00;
-            box-shadow: 0 0 15px rgba(204, 255, 0, 0.5);
-        }
+      #btn-W.active {
+        border-color: #ccff00;
+        color: #ccff00;
+        box-shadow: 0 0 15px rgba(204, 255, 0, 0.5);
+      }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
 
-        #game-container {
-            max-width: 500px;
-            margin: 0 auto;
-            position: relative;
-            height: 100vh;
-            max-height: 850px;
-            background: radial-gradient(circle at center, #112211 0%, #000000 100%);
-        }
+      #game-container {
+        max-width: 500px;
+        margin: 0 auto;
+        position: relative;
+        height: 100vh;
+        max-height: 850px;
+        background: radial-gradient(circle at center, #112211 0%, #000000 100%);
+      }
     </style>
-</head>
+  </head>
 
-<body class="flex items-center justify-center w-screen h-screen">
+  <body class="flex items-center justify-center w-screen h-screen">
+    <div
+      id="game-container"
+      class="w-full shadow-2xl neon-border rounded-xl overflow-hidden flex flex-col"
+    >
+      <!-- Canvas wrapper -->
+      <div class="relative flex-grow">
+        <canvas id="gameCanvas"></canvas>
 
-    <div id="game-container" class="w-full shadow-2xl neon-border rounded-xl overflow-hidden flex flex-col">
-        <!-- Canvas wrapper -->
-        <div class="relative flex-grow">
-            <canvas id="gameCanvas"></canvas>
-
-            <!-- UI Overlay -->
-            <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-
-                <!-- Score & Next Key (Playing State) -->
-                <div id="hud" class="absolute top-8 w-full px-6 flex justify-between items-start hidden">
-                    <div class="flex flex-col items-start">
-                        <span class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1">Score</span>
-                        <div class="text-4xl dew-text" id="scoreDisplay">0</div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1">Time</span>
-                        <div class="text-3xl dew-text text-white" id="timerDisplay">2:00</div>
-                    </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1">Current
-                            Flavor</span>
-                        <div id="flavorDisplay"
-                            class="text-2xl font-black italic tracking-widest transition-colors duration-200"
-                            style="color: #88ff00; text-shadow: 0 0 10px #88ff00;">ORIGINAL</div>
-                    </div>
-                </div>
-
-                <!-- Start Screen -->
-                <div id="startScreen"
-                    class="text-center p-6 bg-black/80 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto">
-                    <h1 class="text-6xl dew-text mb-2">Do The<br>Dew?</h1>
-                    <p class="text-gray-300 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed">
-                        Bottles have energy barriers!<br>
-                        Press <span style="color:#88ff00" class="font-bold">D</span>, <span style="color:#00ff44"
-                            class="font-bold">E</span>, or <span style="color:#ccff00" class="font-bold">W</span> to
-                        flap AND change your bird's flavor.<br>
-                        <span class="text-white font-black block mt-3 text-lg leading-tight">MATCH THE BARRIER COLOR TO
-                            SURVIVE!</span>
-                    </p>
-                    <button id="startBtn"
-                        class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl">
-                        Drop In
-                    </button>
-                </div>
-
-                <!-- Game Over Screen -->
-                <div id="gameOverScreen"
-                    class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#eaff00] shadow-[0_0_30px_rgba(234,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md">
-                    <h2 class="text-2xl text-[#eaff00] mb-4 mt-2 leading-relaxed"
-                        style="font-family: 'Press Start 2P', cursive; text-shadow: 0 0 10px rgba(234,255,0,0.5);">Game
-                        Over</h2>
-                    <p class="text-white text-[10px] mb-6 leading-loose"
-                        style="font-family: 'Press Start 2P', cursive; text-shadow: 2px 2px 0px #000;">You got no
-                        Game,<br><span style="color:#88ff00">when you Play No DEW</span></p>
-                    <p class="text-gray-400 mb-2 uppercase font-bold text-sm">Final Score</p>
-                    <p id="finalScore" class="text-6xl dew-text mb-6">0</p>
-                    <button id="restartBtn"
-                        class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-sm w-full font-sans">
-                        Cooldown...
-                    </button>
-                </div>
-
-                <!-- Win / Achievement Screen -->
-                <div id="winScreen"
-                    class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#88ff00] shadow-[0_0_30px_rgba(136,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto">
-                    <h2 class="text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
-                        style="font-family: 'Black Ops One', cursive; text-shadow: 0 0 10px rgba(136,255,0,0.5);">DEW
-                        MASTER</h2>
-                    <p class="text-gray-300 mb-6 font-bold text-sm">You Survived 2 Minutes!</p>
-                    <p class="text-gray-400 mb-2 uppercase font-bold text-sm">Final Score</p>
-                    <p id="winScore" class="text-6xl dew-text mb-6">0</p>
-                    <button id="winRestartBtn"
-                        class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl">
-                        Play Again
-                    </button>
-                </div>
-
-                <!-- Countdown Display -->
-                <div id="countdownDisplay"
-                    class="hidden absolute inset-0 flex items-center justify-center text-[10rem] dew-text font-black z-50 transition-transform duration-200 pointer-events-none">
-                    3
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Mobile / Touch Controls -->
+        <!-- UI Overlay -->
         <div
-            class="h-32 bg-black border-t-2 border-[#224411] flex items-center justify-center gap-4 px-4 pb-4 select-none">
-            <button id="btn-D" data-key="D"
-                class="btn-dew active flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center">
-                <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
-                    <rect x="0" y="0" width="1" height="5" fill="#88ff00" />
-                    <rect x="1" y="0" width="2" height="1" fill="#88ff00" />
-                    <rect x="1" y="4" width="2" height="1" fill="#88ff00" />
-                    <rect x="3" y="1" width="1" height="3" fill="#88ff00" />
-                </svg>
-                <span class="text-[10px] font-bold tracking-widest opacity-70">GG</span>
+          id="ui-layer"
+          class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center"
+        >
+          <!-- Score & Next Key (Playing State) -->
+          <div
+            id="hud"
+            class="absolute top-8 w-full px-6 flex justify-between items-start hidden"
+          >
+            <div class="flex flex-col items-start">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Score</span
+              >
+              <div class="text-4xl dew-text" id="scoreDisplay">0</div>
+            </div>
+            <div class="flex flex-col items-center">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Time</span
+              >
+              <div class="text-3xl dew-text text-white" id="timerDisplay">
+                2:00
+              </div>
+            </div>
+            <div class="flex flex-col items-end">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Current Flavor</span
+              >
+              <div
+                id="flavorDisplay"
+                class="text-2xl font-black italic tracking-widest transition-colors duration-200"
+                style="color: #88ff00; text-shadow: 0 0 10px #88ff00"
+              >
+                ORIGINAL
+              </div>
+            </div>
+          </div>
+
+          <!-- Start Screen -->
+          <div
+            id="startScreen"
+            class="text-center p-6 bg-black/80 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto"
+          >
+            <h1 class="text-6xl dew-text mb-2">Do The<br />Dew?</h1>
+            <p
+              class="text-gray-300 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed"
+            >
+              Bottles have energy barriers!<br />
+              Press <span style="color: #88ff00" class="font-bold">D</span>,
+              <span style="color: #00ff44" class="font-bold">E</span>, or
+              <span style="color: #ccff00" class="font-bold">W</span> to flap
+              AND change your bird's flavor.<br />
+              <span
+                class="text-white font-black block mt-3 text-lg leading-tight"
+                >MATCH THE BARRIER COLOR TO SURVIVE!</span
+              >
+            </p>
+            <button
+              id="startBtn"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl"
+            >
+              Drop In
             </button>
-            <button id="btn-E" data-key="E"
-                class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center">
-                <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
-                    <rect x="0" y="0" width="1" height="5" fill="#00ff44" />
-                    <rect x="1" y="0" width="3" height="1" fill="#00ff44" />
-                    <rect x="1" y="2" width="2" height="1" fill="#00ff44" />
-                    <rect x="1" y="4" width="3" height="1" fill="#00ff44" />
-                </svg>
-                <span class="text-[10px] font-bold tracking-widest opacity-70">BANGIS</span>
+          </div>
+
+          <!-- Game Over Screen -->
+          <div
+            id="gameOverScreen"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#eaff00] shadow-[0_0_30px_rgba(234,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md"
+          >
+            <h2
+              class="text-2xl text-[#eaff00] mb-4 mt-2 leading-relaxed"
+              style="
+                font-family: &quot;Press Start 2P&quot;, cursive;
+                text-shadow: 0 0 10px rgba(234, 255, 0, 0.5);
+              "
+            >
+              Game Over
+            </h2>
+            <p
+              class="text-white text-[10px] mb-6 leading-loose"
+              style="
+                font-family: &quot;Press Start 2P&quot;, cursive;
+                text-shadow: 2px 2px 0px #000;
+              "
+            >
+              You got no Game,<br /><span style="color: #88ff00"
+                >when you Play No DEW</span
+              >
+            </p>
+            <p class="text-gray-400 mb-2 uppercase font-bold text-sm">
+              Final Score
+            </p>
+            <p id="finalScore" class="text-6xl dew-text mb-6">0</p>
+            <button
+              id="restartBtn"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-sm w-full font-sans"
+            >
+              Cooldown...
             </button>
-            <button id="btn-W" data-key="W"
-                class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center">
-                <svg viewBox="0 0 5 5" class="h-7 mb-1 pointer-events-none">
-                    <rect x="0" y="0" width="1" height="3" fill="#ccff00" />
-                    <rect x="1" y="2" width="1" height="3" fill="#ccff00" />
-                    <rect x="2" y="0" width="1" height="3" fill="#ccff00" />
-                    <rect x="3" y="2" width="1" height="3" fill="#ccff00" />
-                    <rect x="4" y="0" width="1" height="3" fill="#ccff00" />
-                </svg>
-                <span class="text-[10px] font-bold tracking-widest opacity-70">FUEL</span>
+          </div>
+
+          <!-- Win / Achievement Screen -->
+          <div
+            id="winScreen"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#88ff00] shadow-[0_0_30px_rgba(136,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto"
+          >
+            <h2
+              class="text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
+              style="
+                font-family: &quot;Black Ops One&quot;, cursive;
+                text-shadow: 0 0 10px rgba(136, 255, 0, 0.5);
+              "
+            >
+              DEW MASTER
+            </h2>
+            <p class="text-gray-300 mb-6 font-bold text-sm">
+              You Survived 2 Minutes!
+            </p>
+            <p class="text-gray-400 mb-2 uppercase font-bold text-sm">
+              Final Score
+            </p>
+            <p id="winScore" class="text-6xl dew-text mb-6">0</p>
+            <button
+              id="winRestartBtn"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl"
+            >
+              Play Again
             </button>
+          </div>
+
+          <!-- Countdown Display -->
+          <div
+            id="countdownDisplay"
+            class="hidden absolute inset-0 flex items-center justify-center text-[10rem] dew-text font-black z-50 transition-transform duration-200 pointer-events-none"
+          >
+            3
+          </div>
         </div>
+      </div>
+
+      <!-- Mobile / Touch Controls -->
+      <div
+        class="h-32 bg-black border-t-2 border-[#224411] flex items-center justify-center gap-4 px-4 pb-4 select-none"
+      >
+        <button
+          id="btn-D"
+          data-key="D"
+          class="btn-dew active flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="5" fill="#88ff00" />
+            <rect x="1" y="0" width="2" height="1" fill="#88ff00" />
+            <rect x="1" y="4" width="2" height="1" fill="#88ff00" />
+            <rect x="3" y="1" width="1" height="3" fill="#88ff00" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >GG</span
+          >
+        </button>
+        <button
+          id="btn-E"
+          data-key="E"
+          class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="5" fill="#00ff44" />
+            <rect x="1" y="0" width="3" height="1" fill="#00ff44" />
+            <rect x="1" y="2" width="2" height="1" fill="#00ff44" />
+            <rect x="1" y="4" width="3" height="1" fill="#00ff44" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >BANGIS</span
+          >
+        </button>
+        <button
+          id="btn-W"
+          data-key="W"
+          class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 5 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="3" fill="#ccff00" />
+            <rect x="1" y="2" width="1" height="3" fill="#ccff00" />
+            <rect x="2" y="0" width="1" height="3" fill="#ccff00" />
+            <rect x="3" y="2" width="1" height="3" fill="#ccff00" />
+            <rect x="4" y="0" width="1" height="3" fill="#ccff00" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >FUEL</span
+          >
+        </button>
+      </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
 
-        // UI Elements
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const winScreen = document.getElementById('winScreen');
-        const hud = document.getElementById('hud');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const finalScoreDisplay = document.getElementById('finalScore');
-        const winScoreDisplay = document.getElementById('winScore');
-        const flavorDisplay = document.getElementById('flavorDisplay');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const winRestartBtn = document.getElementById('winRestartBtn');
-        const countdownDisplay = document.getElementById('countdownDisplay');
+      // UI Elements
+      const startScreen = document.getElementById("startScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+      const winScreen = document.getElementById("winScreen");
+      const hud = document.getElementById("hud");
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      const timerDisplay = document.getElementById("timerDisplay");
+      const finalScoreDisplay = document.getElementById("finalScore");
+      const winScoreDisplay = document.getElementById("winScore");
+      const flavorDisplay = document.getElementById("flavorDisplay");
+      const startBtn = document.getElementById("startBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const winRestartBtn = document.getElementById("winRestartBtn");
+      const countdownDisplay = document.getElementById("countdownDisplay");
 
-        // Touch Buttons
-        const touchBtns = {
-            'D': document.getElementById('btn-D'),
-            'E': document.getElementById('btn-E'),
-            'W': document.getElementById('btn-W')
-        };
+      // Touch Buttons
+      const touchBtns = {
+        D: document.getElementById("btn-D"),
+        E: document.getElementById("btn-E"),
+        W: document.getElementById("btn-W"),
+      };
 
-        // Resize canvas to match wrapper
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+      // Resize canvas to match wrapper
+      function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
 
-        // Setup Images
-        const bgImg = new Image();
-        bgImg.src = 'Background-mtdew.png';
-        const birdImg = new Image();
-        birdImg.src = 'logo_mtdew.png';
-        const pipeImg = new Image();
-        pipeImg.src = 'bottle_mtdew.png';
+      // Setup Images
+      const bgImg = new Image();
+      bgImg.src = "Background-mtdew.png";
+      const birdImg = new Image();
+      birdImg.src = "logo_mtdew.png";
+      const pipeImg = new Image();
+      pipeImg.src = "bottle_mtdew.png";
 
-        // Pixel Art Matrices mimicking the exact SVGs provided
-        const PIXEL_LETTERS = {
-            'D': [
-                [1, 1, 1, 0],
-                [1, 0, 0, 1],
-                [1, 0, 0, 1],
-                [1, 0, 0, 1],
-                [1, 1, 1, 0]
-            ],
-            'E': [
-                [1, 1, 1, 1],
-                [1, 0, 0, 0],
-                [1, 1, 1, 0],
-                [1, 0, 0, 0],
-                [1, 1, 1, 1]
-            ],
-            'W': [
-                [1, 0, 1, 0, 1],
-                [1, 0, 1, 0, 1],
-                [1, 1, 1, 1, 1],
-                [0, 1, 0, 1, 0],
-                [0, 1, 0, 1, 0]
-            ]
-        };
+      // Pixel Art Matrices mimicking the exact SVGs provided
+      const PIXEL_LETTERS = {
+        D: [
+          [1, 1, 1, 0],
+          [1, 0, 0, 1],
+          [1, 0, 0, 1],
+          [1, 0, 0, 1],
+          [1, 1, 1, 0],
+        ],
+        E: [
+          [1, 1, 1, 1],
+          [1, 0, 0, 0],
+          [1, 1, 1, 0],
+          [1, 0, 0, 0],
+          [1, 1, 1, 1],
+        ],
+        W: [
+          [1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1],
+          [1, 1, 1, 1, 1],
+          [0, 1, 0, 1, 0],
+          [0, 1, 0, 1, 0],
+        ],
+      };
 
-        let gameOverCooldown = false;
-        let idleTimer = null; // Used for the 5-sec wait period
+      let gameOverCooldown = false;
+      let idleTimer = null; // Used for the 5-sec wait period
 
-        // Game Constants & Variables
-        const gravity = 0.25;
-        const terminalVelocity = 5;
-        const flapStrength = -5.5;
-        const pipeWidth = 70;
+      // Game Constants & Variables
+      const gravity = 0.25;
+      const terminalVelocity = 5;
+      const flapStrength = -5.5;
+      const pipeWidth = 83;
 
-        // Dynamic Difficulty Variables (Adjusted for very easy start)
-        let pipeGap = 250;
-        let pipeSpeed = 1.5;
-        let pipeSpawnRate = 180;
-        let nextPipeFrame = 180;
+      // Dynamic Difficulty Variables
+      let pipeGap = 250; // Narrower initial gap (was 250)
+      let pipeSpeed = 2;
+      let pipeSpawnRate = 200;
+      let nextPipeFrame = 200;
 
-        // Updated colors to distinct neon greens
-        const FLAVORS = {
-            'D': { name: 'GG', color: '#88ff00', rgb: '136, 255, 0' },
-            'E': { name: 'BANGIS', color: '#00ff44', rgb: '0, 255, 68' },
-            'W': { name: 'FUEL', color: '#ccff00', rgb: '204, 255, 0' }
-        };
-        const flavorKeys = ['D', 'E', 'W'];
+      // Colors
+      const FLAVORS = {
+        D: { name: "GG", color: "#88ff00", rgb: "136, 255, 0" },
+        E: { name: "BANGIS", color: "#00ff44", rgb: "0, 255, 68" },
+        W: { name: "FUEL", color: "#ccff00", rgb: "204, 255, 0" },
+      };
+      const flavorKeys = ["D", "E", "W"];
 
-        let frames = 0;
-        let score = 0;
-        let currentState = 'START'; // START, PLAYING, GAMEOVER, WIN
-        let currentFlavor = 'D';
-        let animationId;
-        let gameStartTime = 0;
-        const maxGameTimeMs = 120000; // 2 minutes
+      let frames = 0;
+      let score = 0;
+      let currentState = "START";
+      let currentFlavor = "D";
+      let animationId;
+      let gameStartTime = 0;
+      const maxGameTimeMs = 120000; // 2 minutes
 
-        // Entities
-        const bird = {
-            x: 60,
-            y: 0,
-            radius: 16,
-            velocity: 0,
-            rotation: 0,
+      // Entities
+      const bird = {
+        x: 60,
+        y: 0,
+        radius: 16,
+        velocity: 0,
+        rotation: 0,
 
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rotation);
 
-                const flavorColor = FLAVORS[currentFlavor].color;
+          const flavorColor = FLAVORS[currentFlavor].color;
 
-                if (birdImg.complete && birdImg.width > 0) {
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowColor = '#000000';
-                    const birdAspect = birdImg.width / birdImg.height;
+          if (birdImg.complete && birdImg.width > 0) {
+            ctx.globalCompositeOperation = "source-over";
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "#000000";
+            const birdAspect = birdImg.width / birdImg.height;
 
-                    // Made bird logo smaller by reducing multiplier from 3.5 to 2.2
-                    const hSize = this.radius * 2.2;
-                    const wSize = hSize * birdAspect;
+            const hSize = this.radius * 3;
+            const wSize = hSize * birdAspect;
 
-                    ctx.drawImage(birdImg, -wSize / 2, -hSize / 2, wSize, hSize);
-                } else {
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = flavorColor;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                    const grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, this.radius);
-                    grad.addColorStop(0, '#ffffff');
-                    grad.addColorStop(0.4, flavorColor);
-                    grad.addColorStop(1, '#000000');
-                    ctx.fillStyle = grad;
-                    ctx.fill();
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.stroke();
-                }
+            ctx.drawImage(birdImg, -wSize / 2, -hSize / 2, wSize, hSize);
+          } else {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = flavorColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, this.radius);
+            grad.addColorStop(0, "#ffffff");
+            grad.addColorStop(0.4, flavorColor);
+            grad.addColorStop(1, "#000000");
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+          }
 
-                ctx.restore();
-            },
+          ctx.restore();
+        },
 
-            update() {
-                this.velocity += gravity;
-                if (this.velocity > terminalVelocity) this.velocity = terminalVelocity;
-                this.y += this.velocity;
+        update() {
+          this.velocity += gravity;
+          if (this.velocity > terminalVelocity)
+            this.velocity = terminalVelocity;
+          this.y += this.velocity;
 
-                this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.1)));
+          this.rotation = Math.min(
+            Math.PI / 4,
+            Math.max(-Math.PI / 4, this.velocity * 0.1),
+          );
 
-                if (this.y + this.radius >= canvas.height) {
-                    this.y = canvas.height - this.radius;
-                    gameOver("CRASHED!");
-                }
-                if (this.y - this.radius <= 0) {
-                    this.y = this.radius;
-                    this.velocity = 0;
-                }
-            },
+          if (this.y + this.radius >= canvas.height) {
+            this.y = canvas.height - this.radius;
+            gameOver("CRASHED!");
+          }
+          if (this.y - this.radius <= 0) {
+            this.y = this.radius;
+            this.velocity = 0;
+          }
+        },
 
-            flap() {
-                this.velocity = flapStrength;
-                createParticles(this.x, this.y, 8, currentFlavor);
-            }
-        };
+        flap() {
+          this.velocity = flapStrength;
+          createParticles(this.x, this.y, 8, currentFlavor);
+        },
+      };
 
-        const pipes = {
-            items: [],
+      const pipes = {
+        items: [],
 
-            draw() {
-                for (let i = 0; i < this.items.length; i++) {
-                    let p = this.items[i];
-                    const flavor = FLAVORS[p.type];
+        draw() {
+          for (let i = 0; i < this.items.length; i++) {
+            let p = this.items[i];
+            const flavor = FLAVORS[p.type];
 
-                    // Always draw the underlying stem to guarantee no visual gaps 
-                    // if the proportional bottle image ends up shorter than the pipe height.
-                    const grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
-                    grad.addColorStop(0, '#111');
-                    grad.addColorStop(0.5, '#444');
-                    grad.addColorStop(1, '#111');
+            if (pipeImg.complete && pipeImg.width > 0) {
+              ctx.save();
+              ctx.globalCompositeOperation = "source-over";
 
-                    ctx.fillStyle = grad;
-                    ctx.strokeStyle = flavor.color;
-                    ctx.lineWidth = 2;
+              const imgAspect = pipeImg.width / pipeImg.height;
+              const minBWidth = pipeWidth * 2.0;
+              const minBHeight = minBWidth / imgAspect;
 
-                    ctx.fillRect(p.x, 0, pipeWidth, p.top);
-                    ctx.strokeRect(p.x, 0, pipeWidth, p.top);
+              // --- Top Pipe ---
+              // Extend upward starting exactly at the collision barrier
+              let topBHeight = Math.max(minBHeight, p.top);
+              let topBWidth = topBHeight * imgAspect;
 
-                    ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
-                    ctx.strokeRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+              ctx.save();
+              // Align perfectly at the collision border (p.top)
+              ctx.translate(p.x + pipeWidth / 2, p.top);
+              ctx.scale(1, -1);
+              // Draw from 0 to ensure the absolute tip (the cap) lies on the collision boundary
+              ctx.drawImage(pipeImg, -topBWidth / 2, 0, topBWidth, topBHeight);
+              ctx.restore();
 
-                    if (pipeImg.complete && pipeImg.width > 0) {
-                        ctx.save();
+              // --- Bottom Pipe ---
+              // Extend downward starting exactly at the collision barrier
+              let bottomBHeight = Math.max(minBHeight, p.bottom);
+              let bottomBWidth = bottomBHeight * imgAspect;
 
-                        // Treat as a standard transparent PNG
-                        ctx.globalCompositeOperation = 'source-over';
+              ctx.save();
+              // Align perfectly at the collision border (canvas.height - p.bottom)
+              ctx.translate(p.x + pipeWidth / 2, canvas.height - p.bottom);
+              // Draw from 0 to ensure the absolute tip (the cap) lies on the collision boundary
+              ctx.drawImage(
+                pipeImg,
+                -bottomBWidth / 2,
+                0,
+                bottomBWidth,
+                bottomBHeight,
+              );
+              ctx.restore();
 
-                        // Maintain proportional aspect ratio (previous style), allow overlap,
-                        // but lock the width to a reasonable multiple of the pipe width to prevent "cup only" zoom.
-                        let bWidth = pipeWidth * 2.0;
-                        let bHeight = bWidth * (pipeImg.height / pipeImg.width);
-
-                        // Shift the image so the cap visually extends into the gap space.
-                        // This aligns the actual collision limits (p.top & p.bottom) with the neck!
-                        let capOffset = bHeight * 0.12;
-
-                        // Top Pipe Bottle (Inverted, cap pointing down into the gap)
-                        ctx.save();
-                        ctx.translate(p.x + pipeWidth / 2, p.top);
-                        ctx.scale(1, -1);
-                        ctx.drawImage(pipeImg, -bWidth / 2, -capOffset, bWidth, bHeight);
-                        ctx.restore();
-
-                        // Bottom Pipe Bottle (Normal, cap pointing up into the gap)
-                        ctx.save();
-                        ctx.translate(p.x + pipeWidth / 2, canvas.height - p.bottom);
-                        ctx.drawImage(pipeImg, -bWidth / 2, -capOffset, bWidth, bHeight);
-                        ctx.restore();
-
-                        ctx.restore();
-                    }
-
-                    // -- AESTHETIC PIXEL BARRIER --
-                    if (!p.passedBarrier) {
-                        const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5; // Oscillates 0 to 1
-                        const gapHeight = canvas.height - p.top - p.bottom;
-
-                        // Floating & Pulsing Pixel Art Letter
-                        ctx.save();
-                        ctx.shadowBlur = 6;
-                        ctx.shadowColor = '#000000';
-
-                        const baseLs = 48; // Base scale size
-                        const ls = baseLs + pulse * 8; // Size pulsates
-                        const floatY = Math.sin(frames * 0.05) * 6; // Floats up and down slowly
-
-                        ctx.translate(p.x + pipeWidth / 2, p.top + gapHeight / 2 + floatY);
-
-                        // Grab the specific 2D matrix for this flavor
-                        const grid = PIXEL_LETTERS[p.type];
-                        const rows = grid.length;
-                        const cols = grid[0].length;
-
-                        // Size of one individual "pixel" block in the grid
-                        const pixelSize = ls / Math.max(rows, cols);
-
-                        // Center the pixel grid to the translation point perfectly
-                        const startX = -(cols * pixelSize) / 2;
-                        const startY = -(rows * pixelSize) / 2;
-
-                        // The color is directly embedded into the pixel blocks!
-                        ctx.fillStyle = flavor.color;
-
-                        // Draw the blocks based on the matrix
-                        for (let r = 0; r < rows; r++) {
-                            for (let c = 0; c < cols; c++) {
-                                if (grid[r][c] === 1) {
-                                    // +0.5 helps avoid subtle anti-aliasing gaps between pixel blocks
-                                    ctx.fillRect(startX + c * pixelSize, startY + r * pixelSize, pixelSize + 0.5, pixelSize + 0.5);
-                                }
-                            }
-                        }
-                        ctx.restore();
-                    }
-                }
-            },
-
-            update() {
-                if (frames >= nextPipeFrame) {
-                    nextPipeFrame = frames + Math.floor(pipeSpawnRate);
-                    let topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
-                    let bottomHeight = canvas.height - pipeGap - topHeight;
-                    let type = flavorKeys[Math.floor(Math.random() * flavorKeys.length)];
-
-                    this.items.push({
-                        x: canvas.width,
-                        top: topHeight,
-                        bottom: bottomHeight,
-                        type: type,
-                        passedBarrier: false
-                    });
-                }
-
-                for (let i = 0; i < this.items.length; i++) {
-                    let p = this.items[i];
-                    p.x -= pipeSpeed;
-
-                    if (bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + pipeWidth) {
-                        if (bird.y - bird.radius < p.top || bird.y + bird.radius > canvas.height - p.bottom) {
-                            gameOver("CRASHED!");
-                        }
-
-                        if (bird.x > p.x + pipeWidth / 2 - 10 && !p.passedBarrier) {
-                            if (currentFlavor !== p.type) {
-                                gameOver("WRONG FLAVOR!");
-                            } else {
-                                p.passedBarrier = true;
-                                score++;
-                                scoreDisplay.innerText = score;
-                                createParticles(bird.x, bird.y, 15, currentFlavor);
-                            }
-                        }
-                    }
-
-                    if (p.x + pipeWidth < 0) {
-                        this.items.shift();
-                        i--;
-                    }
-                }
-            },
-
-            reset() {
-                this.items = [];
-            }
-        };
-
-        // Particle System
-        let particles = [];
-        function createParticles(x, y, count, flavorKey) {
-            const flavorColor = FLAVORS[flavorKey] ? FLAVORS[flavorKey].color : '#ffffff';
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
-                    life: 1,
-                    decay: Math.random() * 0.05 + 0.02,
-                    color: flavorColor
-                });
-            }
-        }
-
-        function drawAndUpdateParticles() {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= p.decay;
-
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                    continue;
-                }
-
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
-        }
-
-        // Game Loop & State Management
-        function drawBackground() {
-            if (bgImg.complete && bgImg.width > 0) {
-                const bgWidth = canvas.height * (bgImg.width / bgImg.height);
-                const bgScroll = (frames * 0.5) % bgWidth;
-                ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, canvas.height);
-                ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, canvas.height);
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.restore();
             } else {
-                ctx.fillStyle = '#050a05';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = '#112200';
-                ctx.lineWidth = 1;
-                const scrollOffset = (frames * 0.5) % 40;
+              // Fallback drawing if image fails to load
+              const grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
+              grad.addColorStop(0, "#111");
+              grad.addColorStop(0.5, "#444");
+              grad.addColorStop(1, "#111");
 
-                for (let i = 0; i < canvas.height; i += 40) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, i);
-                    ctx.lineTo(canvas.width, i);
-                    ctx.stroke();
-                }
+              ctx.fillStyle = grad;
+              ctx.strokeStyle = flavor.color;
+              ctx.lineWidth = 2;
 
-                for (let i = -40; i < canvas.width; i += 40) {
-                    ctx.beginPath();
-                    ctx.moveTo(i - scrollOffset, 0);
-                    ctx.lineTo(i - scrollOffset, canvas.height);
-                    ctx.stroke();
-                }
-            }
-        }
+              ctx.fillRect(p.x, 0, pipeWidth, p.top);
+              ctx.strokeRect(p.x, 0, pipeWidth, p.top);
 
-        function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-
-            if (currentState === 'PLAYING') {
-                let elapsedTime = Date.now() - gameStartTime;
-
-                if (elapsedTime >= maxGameTimeMs) {
-                    winGame();
-                    return;
-                }
-
-                let remainingSeconds = Math.ceil((maxGameTimeMs - elapsedTime) / 1000);
-                let mins = Math.floor(remainingSeconds / 60);
-                let secs = remainingSeconds % 60;
-                timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-
-                // Exponential difficulty curve
-                let progress = Math.min(1, elapsedTime / maxGameTimeMs);
-                let difficultyMultiplier = Math.pow(progress, 1.5); // Stays easy longer, then ramps up hard
-
-                pipeSpeed = 1.5 + (6.0 * difficultyMultiplier);
-                pipeGap = 250 - (170 * difficultyMultiplier); // Gaps shrink from 250 down to a brutal 80
-                pipeSpawnRate = 180 - (145 * difficultyMultiplier);  // Pipes spawn much faster towards the end
-
-                pipes.update();
-                bird.update();
-                frames++;
-            } else if (currentState === 'COUNTDOWN') {
-                bird.y = canvas.height / 2 + Math.sin(Date.now() / 200) * 10;
-                bird.rotation = 0;
+              ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+              ctx.strokeRect(
+                p.x,
+                canvas.height - p.bottom,
+                pipeWidth,
+                p.bottom,
+              );
             }
 
-            pipes.draw();
-            drawAndUpdateParticles();
-            bird.draw();
+            // -- AESTHETIC PIXEL BARRIER --
+            if (!p.passedBarrier) {
+              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5; // Oscillates 0 to 1
+              const gapHeight = canvas.height - p.top - p.bottom;
 
-            if (currentState !== 'GAMEOVER' && currentState !== 'START') {
-                animationId = requestAnimationFrame(loop);
+              // Floating & Pulsing Pixel Art Letter
+              ctx.save();
+              ctx.shadowBlur = 6;
+              ctx.shadowColor = "#000000";
+
+              const baseLs = 48; // Base scale size
+              const ls = baseLs + pulse * 8; // Size pulsates
+              const floatY = Math.sin(frames * 0.05) * 6; // Floats up and down slowly
+
+              ctx.translate(
+                p.x + pipeWidth / 2,
+                p.top + gapHeight / 2 + floatY,
+              );
+
+              // Grab the specific 2D matrix for this flavor
+              const grid = PIXEL_LETTERS[p.type];
+              const rows = grid.length;
+              const cols = grid[0].length;
+
+              // Size of one individual "pixel" block in the grid
+              const pixelSize = ls / Math.max(rows, cols);
+
+              // Center the pixel grid to the translation point perfectly
+              const startX = -(cols * pixelSize) / 2;
+              const startY = -(rows * pixelSize) / 2;
+
+              // The color is directly embedded into the pixel blocks!
+              ctx.fillStyle = flavor.color;
+
+              // Draw the blocks based on the matrix
+              for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                  if (grid[r][c] === 1) {
+                    // +0.5 helps avoid subtle anti-aliasing gaps between pixel blocks
+                    ctx.fillRect(
+                      startX + c * pixelSize,
+                      startY + r * pixelSize,
+                      pixelSize + 0.5,
+                      pixelSize + 0.5,
+                    );
+                  }
+                }
+              }
+              ctx.restore();
             }
+          }
+        },
+
+        update() {
+          if (frames >= nextPipeFrame) {
+            nextPipeFrame = frames + Math.floor(pipeSpawnRate);
+            let topHeight =
+              Math.random() * (canvas.height - pipeGap - 100) + 50;
+            let bottomHeight = canvas.height - pipeGap - topHeight;
+            let type =
+              flavorKeys[Math.floor(Math.random() * flavorKeys.length)];
+
+            this.items.push({
+              x: canvas.width,
+              top: topHeight,
+              bottom: bottomHeight,
+              type: type,
+              passedBarrier: false,
+            });
+          }
+
+          for (let i = 0; i < this.items.length; i++) {
+            let p = this.items[i];
+            p.x -= pipeSpeed;
+
+            if (
+              bird.x + bird.radius > p.x &&
+              bird.x - bird.radius < p.x + pipeWidth
+            ) {
+              if (
+                bird.y - bird.radius < p.top ||
+                bird.y + bird.radius > canvas.height - p.bottom
+              ) {
+                gameOver("CRASHED!");
+              }
+
+              if (bird.x > p.x + pipeWidth / 2 - 10 && !p.passedBarrier) {
+                if (currentFlavor !== p.type) {
+                  gameOver("WRONG FLAVOR!");
+                } else {
+                  p.passedBarrier = true;
+                  score++;
+                  scoreDisplay.innerText = score;
+                  createParticles(bird.x, bird.y, 15, currentFlavor);
+                }
+              }
+            }
+
+            if (p.x + pipeWidth < 0) {
+              this.items.shift();
+              i--;
+            }
+          }
+        },
+
+        reset() {
+          this.items = [];
+        },
+      };
+
+      // Particle System
+      let particles = [];
+      function createParticles(x, y, count, flavorKey) {
+        const flavorColor = FLAVORS[flavorKey]
+          ? FLAVORS[flavorKey].color
+          : "#ffffff";
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            life: 1,
+            decay: Math.random() * 0.05 + 0.02,
+            color: flavorColor,
+          });
+        }
+      }
+
+      function drawAndUpdateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          let p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Game Loop & State Management
+      function drawBackground() {
+        if (bgImg.complete && bgImg.width > 0) {
+          const bgWidth = canvas.height * (bgImg.width / bgImg.height);
+          const bgScroll = (frames * 0.5) % bgWidth;
+          ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, canvas.height);
+          ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, canvas.height);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+          ctx.fillStyle = "#050a05";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = "#112200";
+          ctx.lineWidth = 1;
+          const scrollOffset = (frames * 0.5) % 40;
+
+          for (let i = 0; i < canvas.height; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+            ctx.stroke();
+          }
+
+          for (let i = -40; i < canvas.width; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(i - scrollOffset, 0);
+            ctx.lineTo(i - scrollOffset, canvas.height);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        if (currentState === "PLAYING") {
+          let elapsedTime = Date.now() - gameStartTime;
+
+          if (elapsedTime >= maxGameTimeMs) {
+            winGame();
+            return;
+          }
+
+          let remainingSeconds = Math.ceil(
+            (maxGameTimeMs - elapsedTime) / 1000,
+          );
+          let mins = Math.floor(remainingSeconds / 60);
+          let secs = remainingSeconds % 60;
+          timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+          // Exponential difficulty curve
+          let progress = Math.min(1, elapsedTime / maxGameTimeMs);
+          let difficultyMultiplier = Math.pow(progress, 1.5); // Stays easy longer, then ramps up hard
+
+          pipeSpeed = 1.5 + 6.0 * difficultyMultiplier;
+          // Gaps now shrink from 160 down to 80 (a tighter flight path overall)
+          pipeGap = 160 - 80 * difficultyMultiplier;
+          pipeSpawnRate = 180 - 145 * difficultyMultiplier; // Pipes spawn much faster towards the end
+
+          pipes.update();
+          bird.update();
+          frames++;
+        } else if (currentState === "COUNTDOWN") {
+          bird.y = canvas.height / 2 + Math.sin(Date.now() / 200) * 10;
+          bird.rotation = 0;
         }
 
-        function updateUIState() {
-            Object.keys(touchBtns).forEach(k => touchBtns[k].classList.remove('active'));
-            if (touchBtns[currentFlavor]) touchBtns[currentFlavor].classList.add('active');
+        pipes.draw();
+        drawAndUpdateParticles();
+        bird.draw();
 
-            const flavor = FLAVORS[currentFlavor];
-            flavorDisplay.innerText = flavor.name;
-            flavorDisplay.style.color = flavor.color;
-            flavorDisplay.style.textShadow = `0 0 10px ${flavor.color}`;
+        if (currentState !== "GAMEOVER" && currentState !== "START") {
+          animationId = requestAnimationFrame(loop);
+        }
+      }
+
+      function updateUIState() {
+        Object.keys(touchBtns).forEach((k) =>
+          touchBtns[k].classList.remove("active"),
+        );
+        if (touchBtns[currentFlavor])
+          touchBtns[currentFlavor].classList.add("active");
+
+        const flavor = FLAVORS[currentFlavor];
+        flavorDisplay.innerText = flavor.name;
+        flavorDisplay.style.color = flavor.color;
+        flavorDisplay.style.textShadow = `0 0 10px ${flavor.color}`;
+      }
+
+      function init() {
+        resizeCanvas();
+        bird.y = canvas.height / 2;
+        bird.velocity = 0;
+        bird.rotation = 0;
+        pipes.reset();
+        particles = [];
+        score = 0;
+        frames = 0;
+        currentFlavor = "D";
+        scoreDisplay.innerText = score;
+        timerDisplay.innerText = "2:00";
+
+        // Reset to initial narrower settings
+        pipeGap = 160;
+        pipeSpeed = 1.5;
+        pipeSpawnRate = 180;
+        nextPipeFrame = 180;
+
+        updateUIState();
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        bird.draw();
+      }
+
+      function showMainMenu() {
+        currentState = "START";
+        gameOverScreen.classList.add("hidden");
+        winScreen.classList.add("hidden");
+        hud.classList.add("hidden");
+        startScreen.classList.remove("hidden");
+        init(); // Reset positions visually
+      }
+
+      function startCountdown() {
+        if (currentState === "COUNTDOWN") return;
+
+        // Clear the 5 sec idle timer if they triggered a restart
+        if (idleTimer) {
+          clearInterval(idleTimer);
+          idleTimer = null;
         }
 
-        function init() {
-            resizeCanvas();
-            bird.y = canvas.height / 2;
-            bird.velocity = 0;
-            bird.rotation = 0;
-            pipes.reset();
-            particles = [];
-            score = 0;
-            frames = 0;
-            currentFlavor = 'D';
-            scoreDisplay.innerText = score;
-            timerDisplay.innerText = "2:00";
+        init();
+        currentState = "COUNTDOWN";
+        startScreen.classList.add("hidden");
+        gameOverScreen.classList.add("hidden");
+        winScreen.classList.add("hidden");
+        hud.classList.remove("hidden");
+        countdownDisplay.classList.remove("hidden");
 
-            // Reset to initial easy settings
-            pipeGap = 250;
-            pipeSpeed = 1.5;
-            pipeSpawnRate = 180;
-            nextPipeFrame = 180;
+        if (animationId) cancelAnimationFrame(animationId);
+        loop();
 
-            updateUIState();
+        let count = 3;
+        countdownDisplay.innerText = count;
+        countdownDisplay.style.transform = "scale(1.5)";
+        setTimeout(() => (countdownDisplay.style.transform = "scale(1)"), 100);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            bird.draw();
-        }
+        let timer = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countdownDisplay.innerText = count;
+            countdownDisplay.style.transform = "scale(1.5)";
+            setTimeout(
+              () => (countdownDisplay.style.transform = "scale(1)"),
+              100,
+            );
+          } else {
+            clearInterval(timer);
+            countdownDisplay.classList.add("hidden");
+            startGameAfterCountdown();
+          }
+        }, 1000);
+      }
 
-        function showMainMenu() {
-            currentState = 'START';
-            gameOverScreen.classList.add('hidden');
-            winScreen.classList.add('hidden');
-            hud.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            init(); // Reset positions visually
-        }
+      function startGameAfterCountdown() {
+        currentState = "PLAYING";
+        gameStartTime = Date.now();
+        bird.flap();
+      }
 
-        function startCountdown() {
-            if (currentState === 'COUNTDOWN') return;
+      function winGame() {
+        currentState = "WIN";
+        hud.classList.add("hidden");
+        winScreen.classList.remove("hidden");
+        winScoreDisplay.innerText = score;
+        timerDisplay.innerText = "0:00";
+      }
 
-            // Clear the 5 sec idle timer if they triggered a restart
-            if (idleTimer) {
+      function gameOver(reason) {
+        currentState = "GAMEOVER";
+        hud.classList.add("hidden");
+        gameOverScreen.classList.remove("hidden");
+        finalScoreDisplay.innerText = score;
+
+        canvas.style.transform = "translate(5px, 5px)";
+        setTimeout(
+          () => (canvas.style.transform = "translate(-5px, -5px)"),
+          50,
+        );
+        setTimeout(
+          () => (canvas.style.transform = "translate(5px, -5px)"),
+          100,
+        );
+        setTimeout(() => (canvas.style.transform = "translate(0, 0)"), 150);
+
+        // 1. Enter 3-second strict cooldown
+        gameOverCooldown = true;
+        restartBtn.disabled = true;
+        restartBtn.classList.add("opacity-50");
+        let cd = 3;
+        restartBtn.innerText = `Cooldown: ${cd}s`;
+
+        let cdTimer = setInterval(() => {
+          cd--;
+          if (cd > 0) {
+            restartBtn.innerText = `Cooldown: ${cd}s`;
+          } else {
+            clearInterval(cdTimer);
+
+            // 2. Cooldown over, start 5-second wait for input phase
+            gameOverCooldown = false;
+            restartBtn.disabled = false;
+            restartBtn.classList.remove("opacity-50");
+
+            let waitTime = 5;
+            restartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
+
+            idleTimer = setInterval(() => {
+              waitTime--;
+              if (waitTime > 0) {
+                restartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
+              } else {
+                // 3. User was idle for 5 seconds -> Main Menu
                 clearInterval(idleTimer);
                 idleTimer = null;
-            }
-
-            init();
-            currentState = 'COUNTDOWN';
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            winScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-            countdownDisplay.classList.remove('hidden');
-
-            if (animationId) cancelAnimationFrame(animationId);
-            loop();
-
-            let count = 3;
-            countdownDisplay.innerText = count;
-            countdownDisplay.style.transform = 'scale(1.5)';
-            setTimeout(() => countdownDisplay.style.transform = 'scale(1)', 100);
-
-            let timer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownDisplay.innerText = count;
-                    countdownDisplay.style.transform = 'scale(1.5)';
-                    setTimeout(() => countdownDisplay.style.transform = 'scale(1)', 100);
-                } else {
-                    clearInterval(timer);
-                    countdownDisplay.classList.add('hidden');
-                    startGameAfterCountdown();
-                }
+                showMainMenu();
+              }
             }, 1000);
+          }
+        }, 1000);
+      }
+
+      function handleInput(inputKey) {
+        if (currentState !== "PLAYING") return;
+
+        if (flavorKeys.includes(inputKey)) {
+          currentFlavor = inputKey;
+          updateUIState();
+          bird.flap();
         }
+      }
 
-        function startGameAfterCountdown() {
-            currentState = 'PLAYING';
-            gameStartTime = Date.now();
-            bird.flap();
+      // Event Listeners
+      window.addEventListener("keydown", (e) => {
+        const key = e.key.toUpperCase();
+
+        if (currentState === "PLAYING") {
+          if (flavorKeys.includes(key)) {
+            handleInput(key);
+          }
+        } else if (
+          (currentState === "START" ||
+            currentState === "GAMEOVER" ||
+            currentState === "WIN") &&
+          !gameOverCooldown
+        ) {
+          // Allows ANY key press to restart if cooldown is complete
+          if (flavorKeys.includes(key)) {
+            currentFlavor = key; // Update flavor proactively if they pressed D, E, or W
+            updateUIState();
+          }
+          startCountdown();
         }
+      });
 
-        function winGame() {
-            currentState = 'WIN';
-            hud.classList.add('hidden');
-            winScreen.classList.remove('hidden');
-            winScoreDisplay.innerText = score;
-            timerDisplay.innerText = "0:00";
-        }
-
-        function gameOver(reason) {
-            currentState = 'GAMEOVER';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            finalScoreDisplay.innerText = score;
-
-            canvas.style.transform = "translate(5px, 5px)";
-            setTimeout(() => canvas.style.transform = "translate(-5px, -5px)", 50);
-            setTimeout(() => canvas.style.transform = "translate(5px, -5px)", 100);
-            setTimeout(() => canvas.style.transform = "translate(0, 0)", 150);
-
-            // 1. Enter 3-second strict cooldown
-            gameOverCooldown = true;
-            restartBtn.disabled = true;
-            restartBtn.classList.add('opacity-50');
-            let cd = 3;
-            restartBtn.innerText = `Cooldown: ${cd}s`;
-
-            let cdTimer = setInterval(() => {
-                cd--;
-                if (cd > 0) {
-                    restartBtn.innerText = `Cooldown: ${cd}s`;
-                } else {
-                    clearInterval(cdTimer);
-
-                    // 2. Cooldown over, start 5-second wait for input phase
-                    gameOverCooldown = false;
-                    restartBtn.disabled = false;
-                    restartBtn.classList.remove('opacity-50');
-
-                    let waitTime = 5;
-                    restartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
-
-                    idleTimer = setInterval(() => {
-                        waitTime--;
-                        if (waitTime > 0) {
-                            restartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
-                        } else {
-                            // 3. User was idle for 5 seconds -> Main Menu
-                            clearInterval(idleTimer);
-                            idleTimer = null;
-                            showMainMenu();
-                        }
-                    }, 1000);
-                }
-            }, 1000);
-        }
-
-        function handleInput(inputKey) {
-            if (currentState !== 'PLAYING') return;
-
-            if (flavorKeys.includes(inputKey)) {
-                currentFlavor = inputKey;
-                updateUIState();
-                bird.flap();
-            }
-        }
-
-        // Event Listeners
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toUpperCase();
-
-            if (currentState === 'PLAYING') {
-                if (flavorKeys.includes(key)) {
-                    handleInput(key);
-                }
-            } else if ((currentState === 'START' || currentState === 'GAMEOVER' || currentState === 'WIN') && !gameOverCooldown) {
-                // Allows ANY key press to restart if cooldown is complete
-                if (flavorKeys.includes(key)) {
-                    currentFlavor = key; // Update flavor proactively if they pressed D, E, or W
-                    updateUIState();
-                }
-                startCountdown();
-            }
+      // Touch/Mouse Buttons
+      ["D", "E", "W"].forEach((key) => {
+        const btn = touchBtns[key];
+        btn.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          if (currentState === "PLAYING") {
+            handleInput(key);
+          } else if (
+            (currentState === "START" ||
+              currentState === "GAMEOVER" ||
+              currentState === "WIN") &&
+            !gameOverCooldown
+          ) {
+            currentFlavor = key;
+            updateUIState();
+            startCountdown();
+          }
         });
+      });
 
-        // Touch/Mouse Buttons
-        ['D', 'E', 'W'].forEach(key => {
-            const btn = touchBtns[key];
-            btn.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                if (currentState === 'PLAYING') {
-                    handleInput(key);
-                } else if ((currentState === 'START' || currentState === 'GAMEOVER' || currentState === 'WIN') && !gameOverCooldown) {
-                    currentFlavor = key;
-                    updateUIState();
-                    startCountdown();
-                }
-            });
-        });
+      startBtn.addEventListener("click", () => {
+        if (!gameOverCooldown) startCountdown();
+      });
 
-        startBtn.addEventListener('click', () => {
-            if (!gameOverCooldown) startCountdown();
-        });
+      restartBtn.addEventListener("click", () => {
+        if (!gameOverCooldown) startCountdown();
+      });
 
-        restartBtn.addEventListener('click', () => {
-            if (!gameOverCooldown) startCountdown();
-        });
+      winRestartBtn.addEventListener("click", () => {
+        if (!gameOverCooldown) startCountdown();
+      });
 
-        winRestartBtn.addEventListener('click', () => {
-            if (!gameOverCooldown) startCountdown();
-        });
-
-        // Initial setup
-        init();
-
+      // Initial setup
+      init();
     </script>
-</body>
-
+  </body>
 </html>
