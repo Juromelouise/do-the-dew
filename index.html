@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -30,9 +30,7 @@
       }
 
       .neon-border {
-        box-shadow:
-          0 0 10px #88ff00,
-          inset 0 0 10px #88ff00;
+        box-shadow: 0 0 10px #88ff00, inset 0 0 10px #88ff00;
         border: 2px solid #88ff00;
       }
 
@@ -46,8 +44,7 @@
       .btn-dew.active {
         border-color: #88ff00;
         color: #88ff00;
-        box-shadow:
-          0 0 15px rgba(136, 255, 0, 0.5),
+        box-shadow: 0 0 15px rgba(136, 255, 0, 0.5),
           inset 0 0 10px rgba(136, 255, 0, 0.2);
         transform: scale(1.05);
       }
@@ -178,7 +175,7 @@
             <h2
               class="text-2xl text-[#eaff00] mb-4 mt-2 leading-relaxed"
               style="
-                font-family: &quot;Press Start 2P&quot;, cursive;
+                font-family: 'Press Start 2P', cursive;
                 text-shadow: 0 0 10px rgba(234, 255, 0, 0.5);
               "
             >
@@ -187,7 +184,7 @@
             <p
               class="text-white text-[10px] mb-6 leading-loose"
               style="
-                font-family: &quot;Press Start 2P&quot;, cursive;
+                font-family: 'Press Start 2P', cursive;
                 text-shadow: 2px 2px 0px #000;
               "
             >
@@ -215,7 +212,7 @@
             <h2
               class="text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
               style="
-                font-family: &quot;Black Ops One&quot;, cursive;
+                font-family: 'Black Ops One', cursive;
                 text-shadow: 0 0 10px rgba(136, 255, 0, 0.5);
               "
             >
@@ -376,10 +373,10 @@
       const pipeWidth = 80;
 
       // Dynamic Difficulty Variables
-      let pipeGap = 900; // Narrower initial gap (was 250)
-      let pipeSpeed = 0.1;
-      let pipeSpawnRate = 900;
-      let nextPipeFrame = 300;
+      let pipeGap = 300; // Narrower initial gap (was 250)
+      let pipeSpeed = 1;
+      let pipeSpawnRate = 400;
+      let nextPipeFrame = 400;
 
       // Colors
       const FLAVORS = {
@@ -390,6 +387,7 @@
       const flavorKeys = ["D", "E", "W"];
 
       let frames = 0;
+      let lastTime = 0; // NEW: Track time for delta multiplier
       let score = 0;
       let currentState = "START";
       let currentFlavor = "D";
@@ -441,15 +439,15 @@
           ctx.restore();
         },
 
-        update() {
-          this.velocity += gravity;
+        update(deltaMultiplier) {
+          this.velocity += gravity * deltaMultiplier;
           if (this.velocity > terminalVelocity)
             this.velocity = terminalVelocity;
-          this.y += this.velocity;
+          this.y += this.velocity * deltaMultiplier;
 
           this.rotation = Math.min(
             Math.PI / 4,
-            Math.max(-Math.PI / 4, this.velocity * 0.1),
+            Math.max(-Math.PI / 4, this.velocity * 0.1)
           );
 
           if (this.y + this.radius >= canvas.height) {
@@ -511,7 +509,7 @@
                 -bottomBWidth / 2,
                 0,
                 bottomBWidth,
-                bottomBHeight,
+                bottomBHeight
               );
               ctx.restore();
 
@@ -535,7 +533,7 @@
                 p.x,
                 canvas.height - p.bottom,
                 pipeWidth,
-                p.bottom,
+                p.bottom
               );
             }
 
@@ -555,7 +553,7 @@
 
               ctx.translate(
                 p.x + pipeWidth / 2,
-                p.top + gapHeight / 2 + floatY,
+                p.top + gapHeight / 2 + floatY
               );
 
               // Grab the specific 2D matrix for this flavor
@@ -582,7 +580,7 @@
                       startX + c * pixelSize,
                       startY + r * pixelSize,
                       pixelSize + 0.5,
-                      pixelSize + 0.5,
+                      pixelSize + 0.5
                     );
                   }
                 }
@@ -592,7 +590,7 @@
           }
         },
 
-        update() {
+        update(deltaMultiplier) {
           if (frames >= nextPipeFrame) {
             nextPipeFrame = frames + Math.floor(pipeSpawnRate);
             let topHeight =
@@ -612,7 +610,7 @@
 
           for (let i = 0; i < this.items.length; i++) {
             let p = this.items[i];
-            p.x -= pipeSpeed;
+            p.x -= pipeSpeed * deltaMultiplier;
 
             if (
               bird.x + bird.radius > p.x &&
@@ -668,12 +666,12 @@
         }
       }
 
-      function drawAndUpdateParticles() {
+      function drawAndUpdateParticles(deltaMultiplier) {
         for (let i = particles.length - 1; i >= 0; i--) {
           let p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= p.decay;
+          p.x += p.vx * deltaMultiplier;
+          p.y += p.vy * deltaMultiplier;
+          p.life -= p.decay * deltaMultiplier;
 
           if (p.life <= 0) {
             particles.splice(i, 1);
@@ -721,7 +719,19 @@
         }
       }
 
-      function loop() {
+      function loop(timestamp) {
+        // Initialize the timestamp and calculate delta time
+        if (!timestamp) timestamp = performance.now();
+        if (!lastTime) lastTime = timestamp;
+        let deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+
+        // Cap deltaTime to prevent huge physics jumps if the browser tab is hidden
+        if (deltaTime > 100) deltaTime = 100;
+
+        // At 60 FPS, 1 frame takes 16.66ms. This creates our normalized multiplier.
+        let deltaMultiplier = deltaTime / 16.666;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBackground();
 
@@ -734,11 +744,13 @@
           }
 
           let remainingSeconds = Math.ceil(
-            (maxGameTimeMs - elapsedTime) / 1000,
+            (maxGameTimeMs - elapsedTime) / 1000
           );
           let mins = Math.floor(remainingSeconds / 60);
           let secs = remainingSeconds % 60;
-          timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, "0")}`;
+          timerDisplay.innerText = `${mins}:${secs
+            .toString()
+            .padStart(2, "0")}`;
 
           // Exponential difficulty curve
           let progress = Math.min(1, elapsedTime / maxGameTimeMs);
@@ -749,16 +761,18 @@
           pipeGap = 160 - 80 * difficultyMultiplier;
           pipeSpawnRate = 180 - 145 * difficultyMultiplier; // Pipes spawn much faster towards the end
 
-          pipes.update();
-          bird.update();
-          frames++;
+          pipes.update(deltaMultiplier);
+          bird.update(deltaMultiplier);
+
+          // Incrementing frames by the multiplier fixes background scrolling and pulsing automatically!
+          frames += deltaMultiplier;
         } else if (currentState === "COUNTDOWN") {
           bird.y = canvas.height / 2 + Math.sin(Date.now() / 200) * 10;
           bird.rotation = 0;
         }
 
         pipes.draw();
-        drawAndUpdateParticles();
+        drawAndUpdateParticles(deltaMultiplier);
         bird.draw();
 
         if (currentState !== "GAMEOVER" && currentState !== "START") {
@@ -768,7 +782,7 @@
 
       function updateUIState() {
         Object.keys(touchBtns).forEach((k) =>
-          touchBtns[k].classList.remove("active"),
+          touchBtns[k].classList.remove("active")
         );
         if (touchBtns[currentFlavor])
           touchBtns[currentFlavor].classList.add("active");
@@ -788,6 +802,7 @@
         particles = [];
         score = 0;
         frames = 0;
+        lastTime = 0; // Reset delta timer
         currentFlavor = "D";
         scoreDisplay.innerText = score;
         timerDisplay.innerText = "2:00";
@@ -832,7 +847,7 @@
         countdownDisplay.classList.remove("hidden");
 
         if (animationId) cancelAnimationFrame(animationId);
-        loop();
+        loop(performance.now()); // Pass the starting timestamp
 
         let count = 3;
         countdownDisplay.innerText = count;
@@ -846,7 +861,7 @@
             countdownDisplay.style.transform = "scale(1.5)";
             setTimeout(
               () => (countdownDisplay.style.transform = "scale(1)"),
-              100,
+              100
             );
           } else {
             clearInterval(timer);
@@ -879,11 +894,11 @@
         canvas.style.transform = "translate(5px, 5px)";
         setTimeout(
           () => (canvas.style.transform = "translate(-5px, -5px)"),
-          50,
+          50
         );
         setTimeout(
           () => (canvas.style.transform = "translate(5px, -5px)"),
-          100,
+          100
         );
         setTimeout(() => (canvas.style.transform = "translate(0, 0)"), 150);
 
