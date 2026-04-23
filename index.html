@@ -80,11 +80,12 @@
       }
 
       #game-container {
-        max-width: 500px;
+        /* Increased max-width slightly so it looks incredible and fills more of a 65 inch TV */
+        max-width: 600px;
         margin: 0 auto;
         position: relative;
         height: 100vh;
-        max-height: 850px;
+        max-height: 950px;
         background: radial-gradient(circle at center, #112211 0%, #000000 100%);
       }
     </style>
@@ -314,18 +315,36 @@
       const restartBtn = document.getElementById("restartBtn");
       const winRestartBtn = document.getElementById("winRestartBtn");
       const countdownDisplay = document.getElementById("countdownDisplay");
-
-      // Touch Buttons
       const touchBtns = {
         D: document.getElementById("btn-D"),
         E: document.getElementById("btn-E"),
         W: document.getElementById("btn-W"),
       };
 
-      // Resize canvas to match wrapper
+      // --- LOGICAL GAME SIZE VARIABLES ---
+      // These replace canvas.width/height in all physics to allow for 4K TV scaling!
+      let gameWidth = 0;
+      let gameHeight = 0;
+
+      // Resize canvas to perfectly fit wrapper, while adding 4K Display scaling
       function resizeCanvas() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
+        const wrapper = canvas.parentElement;
+        gameWidth = wrapper.clientWidth;
+        gameHeight = wrapper.clientHeight;
+
+        // Get the TV/Monitor's pixel density (usually 2 or 3 for 4K displays)
+        const dpr = window.devicePixelRatio || 1;
+
+        // Scale the canvas memory size up so it looks perfectly sharp
+        canvas.width = gameWidth * dpr;
+        canvas.height = gameHeight * dpr;
+
+        // Normalize the coordinate system to use css pixels
+        ctx.scale(dpr, dpr);
+
+        // Keep high-resolution images looking incredibly smooth
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
       }
       window.addEventListener("resize", resizeCanvas);
       resizeCanvas();
@@ -334,9 +353,11 @@
       const bgImg = new Image();
       bgImg.src = "Background-mtdew.png";
       const birdImg = new Image();
-      birdImg.src = "logo_mtdew.png";
-      const pipeImg = new Image();
-      pipeImg.src = "bottle_mtdew.png";
+      birdImg.src = "logo_mtdew.png"; // Updated to JPG based on upload!
+      const topPipeImg = new Image();
+      topPipeImg.src = "top_bottle.png"; // Newly separate top bottle
+      const bottomPipeImg = new Image();
+      bottomPipeImg.src = "bottom_bottle.png"; // Newly separate bottom bottle
 
       // Pixel Art Matrices mimicking the exact SVGs provided
       const PIXEL_LETTERS = {
@@ -373,7 +394,7 @@
       const pipeWidth = 78;
 
       // Dynamic Difficulty Variables
-      let pipeGap = 300; // Narrower initial gap (was 250)
+      let pipeGap = 300;
       let pipeSpeed = 1;
       let pipeSpawnRate = 400;
       let nextPipeFrame = 400;
@@ -387,7 +408,7 @@
       const flavorKeys = ["D", "E", "W"];
 
       let frames = 0;
-      let lastTime = 0; // NEW: Track time for delta multiplier
+      let lastTime = 0; // Track time for delta multiplier
       let score = 0;
       let currentState = "START";
       let currentFlavor = "D";
@@ -416,7 +437,8 @@
             ctx.shadowColor = "#000000";
             const birdAspect = birdImg.width / birdImg.height;
 
-            const hSize = this.radius * 3;
+            // Make the Mountain Dew bird slightly bigger so it looks great on large screens!
+            const hSize = this.radius * 3.5;
             const wSize = hSize * birdAspect;
 
             ctx.drawImage(birdImg, -wSize / 2, -hSize / 2, wSize, hSize);
@@ -450,8 +472,8 @@
             Math.max(-Math.PI / 4, this.velocity * 0.1)
           );
 
-          if (this.y + this.radius >= canvas.height) {
-            this.y = canvas.height - this.radius;
+          if (this.y + this.radius >= gameHeight) {
+            this.y = gameHeight - this.radius;
             gameOver("CRASHED!");
           }
           if (this.y - this.radius <= 0) {
@@ -474,73 +496,105 @@
             let p = this.items[i];
             const flavor = FLAVORS[p.type];
 
-            if (pipeImg.complete && pipeImg.width > 0) {
+            // FIXED WIDTH: Ensures both bottles are always identical sizes
+            // and the logo is crystal clear and perfectly proportioned.
+            const displayWidth = pipeWidth * 2.6;
+
+            // Calculate a MASTER aspect ratio so both top and bottom pipes
+            // are forced to be the exact same height and size!
+            let masterAspect = 0.33; // Fallback aspect ratio
+            if (bottomPipeImg.complete && bottomPipeImg.height > 0) {
+              masterAspect = bottomPipeImg.width / bottomPipeImg.height;
+            } else if (topPipeImg.complete && topPipeImg.height > 0) {
+              masterAspect = topPipeImg.width / topPipeImg.height;
+            }
+            const displayHeight = displayWidth / masterAspect;
+
+            // --- Draw Top Pipe (top_bottle.png) ---
+            if (topPipeImg.complete && topPipeImg.width > 0) {
               ctx.save();
               ctx.globalCompositeOperation = "source-over";
 
-              const imgAspect = pipeImg.width / pipeImg.height;
-              const minBWidth = pipeWidth * 2.0;
-              const minBHeight = minBWidth / imgAspect;
-
-              // --- Top Pipe ---
-              // Extend upward starting exactly at the collision barrier
-              let topBHeight = Math.max(minBHeight, p.top);
-              let topBWidth = topBHeight * imgAspect;
-
-              ctx.save();
-              // Align perfectly at the collision border (p.top)
+              // Move exactly to the top collision barrier line
               ctx.translate(p.x + pipeWidth / 2, p.top);
-              ctx.scale(1, -1);
-              // Draw from 0 to ensure the absolute tip (the cap) lies on the collision boundary
-              ctx.drawImage(pipeImg, -topBWidth / 2, 0, topBWidth, topBHeight);
-              ctx.restore();
 
-              // --- Bottom Pipe ---
-              // Extend downward starting exactly at the collision barrier
-              let bottomBHeight = Math.max(minBHeight, p.bottom);
-              let bottomBWidth = bottomBHeight * imgAspect;
-
-              ctx.save();
-              // Align perfectly at the collision border (canvas.height - p.bottom)
-              ctx.translate(p.x + pipeWidth / 2, canvas.height - p.bottom);
-              // Draw from 0 to ensure the absolute tip (the cap) lies on the collision boundary
+              // Because top_bottle is already flipped, we draw upwards (negative Y)
+              // This makes the cap sit perfectly on the barrier!
               ctx.drawImage(
-                pipeImg,
-                -bottomBWidth / 2,
-                0,
-                bottomBWidth,
-                bottomBHeight
+                topPipeImg,
+                -displayWidth / 2,
+                -displayHeight,
+                displayWidth,
+                displayHeight
               );
-              ctx.restore();
+
+              // If the screen gap is massive, fill any empty space securely behind the bottle edge
+              if (p.top > displayHeight) {
+                ctx.fillStyle = "#050a05"; // Subtly extends the dark green into the background
+                ctx.fillRect(
+                  -pipeWidth / 2,
+                  -p.top,
+                  pipeWidth,
+                  p.top - displayHeight + 2
+                );
+              }
 
               ctx.restore();
-            } else {
-              // Fallback drawing if image fails to load
+            }
+
+            // --- Draw Bottom Pipe (bottom_bottle.png) ---
+            if (bottomPipeImg.complete && bottomPipeImg.width > 0) {
+              ctx.save();
+              ctx.globalCompositeOperation = "source-over";
+
+              // Move exactly to the bottom collision barrier line
+              ctx.translate(p.x + pipeWidth / 2, gameHeight - p.bottom);
+
+              // Draw downwards (positive Y), cap sits perfectly on the barrier
+              ctx.drawImage(
+                bottomPipeImg,
+                -displayWidth / 2,
+                0,
+                displayWidth,
+                displayHeight
+              );
+
+              // If the screen gap is massive, fill any empty space securely behind the bottle edge
+              if (p.bottom > displayHeight) {
+                ctx.fillStyle = "#050a05";
+                ctx.fillRect(
+                  -pipeWidth / 2,
+                  displayHeight - 2,
+                  pipeWidth,
+                  p.bottom - displayHeight + 5
+                );
+              }
+
+              ctx.restore();
+            }
+
+            // Fallbacks just in case images are still loading
+            if (
+              (!topPipeImg.complete || topPipeImg.width === 0) &&
+              (!bottomPipeImg.complete || bottomPipeImg.width === 0)
+            ) {
               const grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
               grad.addColorStop(0, "#111");
               grad.addColorStop(0.5, "#444");
               grad.addColorStop(1, "#111");
-
               ctx.fillStyle = grad;
               ctx.strokeStyle = flavor.color;
               ctx.lineWidth = 2;
-
               ctx.fillRect(p.x, 0, pipeWidth, p.top);
               ctx.strokeRect(p.x, 0, pipeWidth, p.top);
-
-              ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
-              ctx.strokeRect(
-                p.x,
-                canvas.height - p.bottom,
-                pipeWidth,
-                p.bottom
-              );
+              ctx.fillRect(p.x, gameHeight - p.bottom, pipeWidth, p.bottom);
+              ctx.strokeRect(p.x, gameHeight - p.bottom, pipeWidth, p.bottom);
             }
 
             // -- AESTHETIC PIXEL BARRIER --
             if (!p.passedBarrier) {
               const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5; // Oscillates 0 to 1
-              const gapHeight = canvas.height - p.top - p.bottom;
+              const gapHeight = gameHeight - p.top - p.bottom;
 
               // Floating & Pulsing Pixel Art Letter
               ctx.save();
@@ -593,14 +647,13 @@
         update(deltaMultiplier) {
           if (frames >= nextPipeFrame) {
             nextPipeFrame = frames + Math.floor(pipeSpawnRate);
-            let topHeight =
-              Math.random() * (canvas.height - pipeGap - 100) + 50;
-            let bottomHeight = canvas.height - pipeGap - topHeight;
+            let topHeight = Math.random() * (gameHeight - pipeGap - 100) + 50;
+            let bottomHeight = gameHeight - pipeGap - topHeight;
             let type =
               flavorKeys[Math.floor(Math.random() * flavorKeys.length)];
 
             this.items.push({
-              x: canvas.width,
+              x: gameWidth,
               top: topHeight,
               bottom: bottomHeight,
               type: type,
@@ -618,7 +671,7 @@
             ) {
               if (
                 bird.y - bird.radius < p.top ||
-                bird.y + bird.radius > canvas.height - p.bottom
+                bird.y + bird.radius > gameHeight - p.bottom
               ) {
                 gameOver("CRASHED!");
               }
@@ -690,30 +743,42 @@
       // Game Loop & State Management
       function drawBackground() {
         if (bgImg.complete && bgImg.width > 0) {
-          const bgWidth = canvas.height * (bgImg.width / bgImg.height);
+          const bgWidth = gameHeight * (bgImg.width / bgImg.height);
           const bgScroll = (frames * 0.5) % bgWidth;
-          ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, canvas.height);
-          ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, canvas.height);
+          ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, gameHeight);
+          ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, gameHeight);
+
+          // Failsafe for extremely wide displays
+          if (bgWidth * 2 - bgScroll < gameWidth) {
+            ctx.drawImage(
+              bgImg,
+              bgWidth * 2 - bgScroll,
+              0,
+              bgWidth,
+              gameHeight
+            );
+          }
+
           ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillRect(0, 0, gameWidth, gameHeight);
         } else {
           ctx.fillStyle = "#050a05";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillRect(0, 0, gameWidth, gameHeight);
           ctx.strokeStyle = "#112200";
           ctx.lineWidth = 1;
           const scrollOffset = (frames * 0.5) % 40;
 
-          for (let i = 0; i < canvas.height; i += 40) {
+          for (let i = 0; i < gameHeight; i += 40) {
             ctx.beginPath();
             ctx.moveTo(0, i);
-            ctx.lineTo(canvas.width, i);
+            ctx.lineTo(gameWidth, i);
             ctx.stroke();
           }
 
-          for (let i = -40; i < canvas.width; i += 40) {
+          for (let i = -40; i < gameWidth; i += 40) {
             ctx.beginPath();
             ctx.moveTo(i - scrollOffset, 0);
-            ctx.lineTo(i - scrollOffset, canvas.height);
+            ctx.lineTo(i - scrollOffset, gameHeight);
             ctx.stroke();
           }
         }
@@ -732,7 +797,7 @@
         // At 60 FPS, 1 frame takes 16.66ms. This creates our normalized multiplier.
         let deltaMultiplier = deltaTime / 16.666;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, gameWidth, gameHeight);
         drawBackground();
 
         if (currentState === "PLAYING") {
@@ -767,7 +832,7 @@
           // Incrementing frames by the multiplier fixes background scrolling and pulsing automatically!
           frames += deltaMultiplier;
         } else if (currentState === "COUNTDOWN") {
-          bird.y = canvas.height / 2 + Math.sin(Date.now() / 200) * 10;
+          bird.y = gameHeight / 2 + Math.sin(Date.now() / 200) * 10;
           bird.rotation = 0;
         }
 
@@ -795,7 +860,7 @@
 
       function init() {
         resizeCanvas();
-        bird.y = canvas.height / 2;
+        bird.y = gameHeight / 2;
         bird.velocity = 0;
         bird.rotation = 0;
         pipes.reset();
@@ -815,7 +880,7 @@
 
         updateUIState();
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, gameWidth, gameHeight);
         drawBackground();
         bird.draw();
       }
