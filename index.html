@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Do The Dew</title>
-    <link rel="icon" type="image/x-icon" href="logo_mtdew.png">
+    <link rel="icon" type="image/x-icon" href="logo_mtdew.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Montserrat:ital,wght@1,900&family=Press+Start+2P&display=swap");
@@ -148,9 +148,9 @@
             class="text-center p-4 sm:p-5 bg-black/90 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto flex flex-col items-center w-11/12 max-w-sm"
           >
             <!-- Replaced text instructions with the provided mechanics image -->
-            <img 
-              src="game_mech.jpg" 
-              alt="Game Mechanics" 
+            <img
+              src="game_mech.jpg"
+              alt="Game Mechanics"
               class="w-full h-auto max-h-[60vh] object-contain rounded-lg mb-4 shadow-[0_0_15px_rgba(136,255,0,0.2)] border border-[#88ff00]/30"
             />
             <button
@@ -201,29 +201,30 @@
           <!-- Win / Achievement Screen -->
           <div
             id="winScreen"
-            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#88ff00] shadow-[0_0_30px_rgba(136,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#88ff00] shadow-[0_0_30px_rgba(136,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md"
           >
             <h2
-              class="text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
+              class="text-4xl sm:text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
               style="
                 font-family: 'Black Ops One', cursive;
                 text-shadow: 0 0 10px rgba(136, 255, 0, 0.5);
               "
             >
-              DEW MASTER
+              You got the dew!
             </h2>
-            <p class="text-gray-300 mb-6 font-bold text-sm">
-              You Survived 2 Minutes!
-            </p>
+
+            <!-- SPACE LEFT BEHIND FOR ADDING MORE STUFF -->
+            <div id="extraWinContent" class="min-h-[40px] mb-4"></div>
+
             <p class="text-gray-400 mb-2 uppercase font-bold text-sm">
               Final Score
             </p>
             <p id="winScore" class="text-6xl dew-text mb-6">0</p>
             <button
               id="winRestartBtn"
-              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-sm w-full font-sans"
             >
-              Play Again
+              Cooldown...
             </button>
           </div>
 
@@ -318,13 +319,13 @@
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
       function initAudio() {
-        if (audioCtx.state === 'suspended') {
+        if (audioCtx.state === "suspended") {
           audioCtx.resume();
         }
       }
 
       function playSound(type) {
-        if (!audioCtx || audioCtx.state === 'suspended') return;
+        if (!audioCtx || audioCtx.state === "suspended") return;
 
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
@@ -333,36 +334,36 @@
 
         const now = audioCtx.currentTime;
 
-        if (type === 'flap') {
+        if (type === "flap") {
           // Quick retro energy jump
-          osc.type = 'sine';
+          osc.type = "sine";
           osc.frequency.setValueAtTime(300, now);
           osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
           gainNode.gain.setValueAtTime(0.15, now);
           gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
           osc.start(now);
           osc.stop(now + 0.1);
-        } else if (type === 'score') {
+        } else if (type === "score") {
           // Bright synthetic 'ping' / coin sound
-          osc.type = 'triangle';
+          osc.type = "triangle";
           osc.frequency.setValueAtTime(880, now); // A5
           osc.frequency.setValueAtTime(1318.51, now + 0.05); // E6
           gainNode.gain.setValueAtTime(0.2, now);
           gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
           osc.start(now);
           osc.stop(now + 0.3);
-        } else if (type === 'crash') {
+        } else if (type === "crash") {
           // Low dropping bass sound
-          osc.type = 'sawtooth';
+          osc.type = "sawtooth";
           osc.frequency.setValueAtTime(150, now);
           osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
           gainNode.gain.setValueAtTime(0.3, now);
           gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
           osc.start(now);
           osc.stop(now + 0.4);
-        } else if (type === 'wrong') {
+        } else if (type === "wrong") {
           // Harsh arcade buzzer
-          osc.type = 'square';
+          osc.type = "square";
           osc.frequency.setValueAtTime(110, now);
           osc.frequency.setValueAtTime(90, now + 0.1);
           gainNode.gain.setValueAtTime(0.25, now);
@@ -396,11 +397,11 @@
       const bgImg = new Image();
       bgImg.src = "Background-mtdew.png";
       const birdImg = new Image();
-      birdImg.src = "logo_mtdew.png"; 
+      birdImg.src = "logo_mtdew.png";
       const topPipeImg = new Image();
-      topPipeImg.src = "top_bottle.png"; 
+      topPipeImg.src = "top_bottle.png";
       const bottomPipeImg = new Image();
-      bottomPipeImg.src = "bottom_bottle.png"; 
+      bottomPipeImg.src = "bottom_bottle.png";
 
       // Pixel Art Matrices
       const PIXEL_LETTERS = {
@@ -428,7 +429,7 @@
       };
 
       let gameOverCooldown = false;
-      let idleTimer = null; 
+      let idleTimer = null;
 
       // Game Constants & Variables
       const gravity = 0.25;
@@ -450,13 +451,14 @@
       const flavorKeys = ["D", "E", "W"];
 
       let frames = 0;
-      let lastTime = 0; 
+      let lastTime = 0;
       let score = 0;
       let currentState = "START";
       let currentFlavor = "D";
       let animationId;
       let gameStartTime = 0;
       const maxGameTimeMs = 120000; // 2 minutes
+      const scoreToWin = 25; // Score required to win
 
       // Entities
       const bird = {
@@ -525,7 +527,7 @@
 
         flap() {
           this.velocity = flapStrength;
-          playSound('flap'); // Play jump sound!
+          playSound("flap"); // Play jump sound!
           createParticles(this.x, this.y, 8, currentFlavor);
         },
       };
@@ -540,7 +542,7 @@
 
             const displayWidth = pipeWidth * 2.6;
 
-            let masterAspect = 0.33; 
+            let masterAspect = 0.33;
             if (bottomPipeImg.complete && bottomPipeImg.height > 0) {
               masterAspect = bottomPipeImg.width / bottomPipeImg.height;
             } else if (topPipeImg.complete && topPipeImg.height > 0) {
@@ -560,7 +562,7 @@
                 displayHeight
               );
               if (p.top > displayHeight) {
-                ctx.fillStyle = "#050a05"; 
+                ctx.fillStyle = "#050a05";
                 ctx.fillRect(
                   -pipeWidth / 2,
                   -p.top,
@@ -612,16 +614,16 @@
             }
 
             if (!p.passedBarrier) {
-              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5; 
+              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5;
               const gapHeight = gameHeight - p.top - p.bottom;
 
               ctx.save();
               ctx.shadowBlur = 6;
               ctx.shadowColor = "#000000";
 
-              const baseLs = 48; 
-              const ls = baseLs + pulse * 8; 
-              const floatY = Math.sin(frames * 0.05) * 6; 
+              const baseLs = 48;
+              const ls = baseLs + pulse * 8;
+              const floatY = Math.sin(frames * 0.05) * 6;
 
               ctx.translate(
                 p.x + pipeWidth / 2,
@@ -695,8 +697,13 @@
                   p.passedBarrier = true;
                   score++;
                   scoreDisplay.innerText = score;
-                  playSound('score'); // Play score sound!
+                  playSound("score"); // Play score sound!
                   createParticles(bird.x, bird.y, 15, currentFlavor);
+
+                  // Trigger win state if score requirement is met
+                  if (score >= scoreToWin) {
+                    winGame();
+                  }
                 }
               }
             }
@@ -824,11 +831,11 @@
             .padStart(2, "0")}`;
 
           let progress = Math.min(1, elapsedTime / maxGameTimeMs);
-          let difficultyMultiplier = Math.pow(progress, 1.5); 
+          let difficultyMultiplier = Math.pow(progress, 1.5);
 
           pipeSpeed = 1.5 + 6.0 * difficultyMultiplier;
           pipeGap = 160 - 80 * difficultyMultiplier;
-          pipeSpawnRate = 180 - 145 * difficultyMultiplier; 
+          pipeSpawnRate = 180 - 145 * difficultyMultiplier;
 
           pipes.update(deltaMultiplier);
           bird.update(deltaMultiplier);
@@ -859,8 +866,8 @@
 
       function updateNextFlavorUI() {
         // Find the very next pipe that hasn't been passed yet
-        let nextPipe = pipes.items.find(p => !p.passedBarrier);
-        
+        let nextPipe = pipes.items.find((p) => !p.passedBarrier);
+
         if (nextPipe) {
           const flavor = FLAVORS[nextPipe.type];
           if (flavorDisplay.innerText !== flavor.name) {
@@ -886,7 +893,7 @@
         particles = [];
         score = 0;
         frames = 0;
-        lastTime = 0; 
+        lastTime = 0;
         currentFlavor = "D";
         scoreDisplay.innerText = score;
         timerDisplay.innerText = "2:00";
@@ -910,7 +917,7 @@
         winScreen.classList.add("hidden");
         hud.classList.add("hidden");
         startScreen.classList.remove("hidden");
-        init(); 
+        init();
       }
 
       function startCountdown() {
@@ -932,7 +939,7 @@
         countdownDisplay.classList.remove("hidden");
 
         if (animationId) cancelAnimationFrame(animationId);
-        loop(performance.now()); 
+        loop(performance.now());
 
         let count = 3;
         countdownDisplay.innerText = count;
@@ -964,18 +971,50 @@
 
       function winGame() {
         currentState = "WIN";
-        playSound('score'); // Trigger win fanfare piece
+        playSound("score"); // Trigger win fanfare piece
         hud.classList.add("hidden");
         winScreen.classList.remove("hidden");
         winScoreDisplay.innerText = score;
-        timerDisplay.innerText = "0:00";
+
+        // Cooldown mechanism identical to the gameOver
+        gameOverCooldown = true;
+        winRestartBtn.disabled = true;
+        winRestartBtn.classList.add("opacity-50");
+        let cd = 3;
+        winRestartBtn.innerText = `Cooldown: ${cd}s`;
+
+        let cdTimer = setInterval(() => {
+          cd--;
+          if (cd > 0) {
+            winRestartBtn.innerText = `Cooldown: ${cd}s`;
+          } else {
+            clearInterval(cdTimer);
+            gameOverCooldown = false;
+            winRestartBtn.disabled = false;
+            winRestartBtn.classList.remove("opacity-50");
+
+            let waitTime = 5;
+            winRestartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
+
+            idleTimer = setInterval(() => {
+              waitTime--;
+              if (waitTime > 0) {
+                winRestartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
+              } else {
+                clearInterval(idleTimer);
+                idleTimer = null;
+                showMainMenu();
+              }
+            }, 1000);
+          }
+        }, 1000);
       }
 
       function gameOver(reason) {
         if (reason === "WRONG FLAVOR!") {
-           playSound('wrong');
+          playSound("wrong");
         } else {
-           playSound('crash');
+          playSound("crash");
         }
 
         currentState = "GAMEOVER";
@@ -1053,7 +1092,7 @@
           !gameOverCooldown
         ) {
           if (flavorKeys.includes(key)) {
-            currentFlavor = key; 
+            currentFlavor = key;
             updateUIState();
           }
           startCountdown();
