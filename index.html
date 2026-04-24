@@ -144,27 +144,19 @@
           <!-- Start Screen -->
           <div
             id="startScreen"
-            class="text-center p-6 bg-black/80 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto"
+            class="text-center p-4 sm:p-5 bg-black/90 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto flex flex-col items-center w-11/12 max-w-sm"
           >
-            <h1 class="text-6xl dew-text mb-2">Do The<br />Dew?</h1>
-            <p
-              class="text-gray-300 text-sm mb-6 max-w-[280px] mx-auto leading-relaxed"
-            >
-              Bottles have energy barriers!<br />
-              Press <span style="color: #88ff00" class="font-bold">D</span>,
-              <span style="color: #00ff44" class="font-bold">E</span>, or
-              <span style="color: #ccff00" class="font-bold">W</span> to flap
-              AND change your bird's flavor.<br />
-              <span
-                class="text-white font-black block mt-3 text-lg leading-tight"
-                >MATCH THE BARRIER COLOR TO SURVIVE!</span
-              >
-            </p>
+            <!-- Replaced text instructions with the provided mechanics image -->
+            <img
+              src="game_mech.jpg"
+              alt="Game Mechanics"
+              class="w-full h-auto max-h-[60vh] object-contain rounded-lg mb-4 shadow-[0_0_15px_rgba(136,255,0,0.2)] border border-[#88ff00]/30"
+            />
             <button
               id="startBtn"
-              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-xl"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-4 sm:px-8 rounded-full hover:bg-white hover:shadow-[0_0_20px_#88ff00] transition-all transform hover:scale-105 active:scale-95 text-sm sm:text-base md:text-lg w-full leading-tight"
             >
-              Drop In
+              PRESS D / E / W CAPS TO DROP
             </button>
           </div>
 
@@ -321,8 +313,65 @@
         W: document.getElementById("btn-W"),
       };
 
+      // --- RETRO AUDIO SYSTEM ---
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function initAudio() {
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      }
+
+      function playSound(type) {
+        if (!audioCtx || audioCtx.state === "suspended") return;
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "flap") {
+          // Quick retro energy jump
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === "score") {
+          // Bright synthetic 'ping' / coin sound
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(880, now); // A5
+          osc.frequency.setValueAtTime(1318.51, now + 0.05); // E6
+          gainNode.gain.setValueAtTime(0.2, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "crash") {
+          // Low dropping bass sound
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === "wrong") {
+          // Harsh arcade buzzer
+          osc.type = "square";
+          osc.frequency.setValueAtTime(110, now);
+          osc.frequency.setValueAtTime(90, now + 0.1);
+          gainNode.gain.setValueAtTime(0.25, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      }
+
       // --- LOGICAL GAME SIZE VARIABLES ---
-      // These replace canvas.width/height in all physics to allow for 4K TV scaling!
       let gameWidth = 0;
       let gameHeight = 0;
 
@@ -332,17 +381,10 @@
         gameWidth = wrapper.clientWidth;
         gameHeight = wrapper.clientHeight;
 
-        // Get the TV/Monitor's pixel density (usually 2 or 3 for 4K displays)
         const dpr = window.devicePixelRatio || 1;
-
-        // Scale the canvas memory size up so it looks perfectly sharp
         canvas.width = gameWidth * dpr;
         canvas.height = gameHeight * dpr;
-
-        // Normalize the coordinate system to use css pixels
         ctx.scale(dpr, dpr);
-
-        // Keep high-resolution images looking incredibly smooth
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
       }
@@ -353,13 +395,13 @@
       const bgImg = new Image();
       bgImg.src = "Background-mtdew.png";
       const birdImg = new Image();
-      birdImg.src = "logo_mtdew.png"; // Updated to JPG based on upload!
+      birdImg.src = "logo_mtdew.png";
       const topPipeImg = new Image();
-      topPipeImg.src = "top_bottle.png"; // Newly separate top bottle
+      topPipeImg.src = "top_bottle.png";
       const bottomPipeImg = new Image();
-      bottomPipeImg.src = "bottom_bottle.png"; // Newly separate bottom bottle
+      bottomPipeImg.src = "bottom_bottle.png";
 
-      // Pixel Art Matrices mimicking the exact SVGs provided
+      // Pixel Art Matrices
       const PIXEL_LETTERS = {
         D: [
           [1, 1, 1, 0],
@@ -385,15 +427,14 @@
       };
 
       let gameOverCooldown = false;
-      let idleTimer = null; // Used for the 5-sec wait period
+      let idleTimer = null;
 
       // Game Constants & Variables
       const gravity = 0.25;
       const terminalVelocity = 5;
       const flapStrength = -5;
-      const pipeWidth = 78;
+      const pipeWidth = 83;
 
-      // Dynamic Difficulty Variables
       let pipeGap = 300;
       let pipeSpeed = 1;
       let pipeSpawnRate = 400;
@@ -408,7 +449,7 @@
       const flavorKeys = ["D", "E", "W"];
 
       let frames = 0;
-      let lastTime = 0; // Track time for delta multiplier
+      let lastTime = 0;
       let score = 0;
       let currentState = "START";
       let currentFlavor = "D";
@@ -437,7 +478,6 @@
             ctx.shadowColor = "#000000";
             const birdAspect = birdImg.width / birdImg.height;
 
-            // Make the Mountain Dew bird slightly bigger so it looks great on large screens!
             const hSize = this.radius * 3.5;
             const wSize = hSize * birdAspect;
 
@@ -484,6 +524,7 @@
 
         flap() {
           this.velocity = flapStrength;
+          playSound("flap"); // Play jump sound!
           createParticles(this.x, this.y, 8, currentFlavor);
         },
       };
@@ -496,13 +537,9 @@
             let p = this.items[i];
             const flavor = FLAVORS[p.type];
 
-            // FIXED WIDTH: Ensures both bottles are always identical sizes
-            // and the logo is crystal clear and perfectly proportioned.
             const displayWidth = pipeWidth * 2.6;
 
-            // Calculate a MASTER aspect ratio so both top and bottom pipes
-            // are forced to be the exact same height and size!
-            let masterAspect = 0.33; // Fallback aspect ratio
+            let masterAspect = 0.33;
             if (bottomPipeImg.complete && bottomPipeImg.height > 0) {
               masterAspect = bottomPipeImg.width / bottomPipeImg.height;
             } else if (topPipeImg.complete && topPipeImg.height > 0) {
@@ -510,16 +547,10 @@
             }
             const displayHeight = displayWidth / masterAspect;
 
-            // --- Draw Top Pipe (top_bottle.png) ---
             if (topPipeImg.complete && topPipeImg.width > 0) {
               ctx.save();
               ctx.globalCompositeOperation = "source-over";
-
-              // Move exactly to the top collision barrier line
               ctx.translate(p.x + pipeWidth / 2, p.top);
-
-              // Because top_bottle is already flipped, we draw upwards (negative Y)
-              // This makes the cap sit perfectly on the barrier!
               ctx.drawImage(
                 topPipeImg,
                 -displayWidth / 2,
@@ -527,10 +558,8 @@
                 displayWidth,
                 displayHeight
               );
-
-              // If the screen gap is massive, fill any empty space securely behind the bottle edge
               if (p.top > displayHeight) {
-                ctx.fillStyle = "#050a05"; // Subtly extends the dark green into the background
+                ctx.fillStyle = "#050a05";
                 ctx.fillRect(
                   -pipeWidth / 2,
                   -p.top,
@@ -538,19 +567,13 @@
                   p.top - displayHeight + 2
                 );
               }
-
               ctx.restore();
             }
 
-            // --- Draw Bottom Pipe (bottom_bottle.png) ---
             if (bottomPipeImg.complete && bottomPipeImg.width > 0) {
               ctx.save();
               ctx.globalCompositeOperation = "source-over";
-
-              // Move exactly to the bottom collision barrier line
               ctx.translate(p.x + pipeWidth / 2, gameHeight - p.bottom);
-
-              // Draw downwards (positive Y), cap sits perfectly on the barrier
               ctx.drawImage(
                 bottomPipeImg,
                 -displayWidth / 2,
@@ -558,8 +581,6 @@
                 displayWidth,
                 displayHeight
               );
-
-              // If the screen gap is massive, fill any empty space securely behind the bottle edge
               if (p.bottom > displayHeight) {
                 ctx.fillStyle = "#050a05";
                 ctx.fillRect(
@@ -569,11 +590,9 @@
                   p.bottom - displayHeight + 5
                 );
               }
-
               ctx.restore();
             }
 
-            // Fallbacks just in case images are still loading
             if (
               (!topPipeImg.complete || topPipeImg.width === 0) &&
               (!bottomPipeImg.complete || bottomPipeImg.width === 0)
@@ -591,45 +610,37 @@
               ctx.strokeRect(p.x, gameHeight - p.bottom, pipeWidth, p.bottom);
             }
 
-            // -- AESTHETIC PIXEL BARRIER --
             if (!p.passedBarrier) {
-              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5; // Oscillates 0 to 1
+              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5;
               const gapHeight = gameHeight - p.top - p.bottom;
 
-              // Floating & Pulsing Pixel Art Letter
               ctx.save();
               ctx.shadowBlur = 6;
               ctx.shadowColor = "#000000";
 
-              const baseLs = 48; // Base scale size
-              const ls = baseLs + pulse * 8; // Size pulsates
-              const floatY = Math.sin(frames * 0.05) * 6; // Floats up and down slowly
+              const baseLs = 48;
+              const ls = baseLs + pulse * 8;
+              const floatY = Math.sin(frames * 0.05) * 6;
 
               ctx.translate(
                 p.x + pipeWidth / 2,
                 p.top + gapHeight / 2 + floatY
               );
 
-              // Grab the specific 2D matrix for this flavor
               const grid = PIXEL_LETTERS[p.type];
               const rows = grid.length;
               const cols = grid[0].length;
 
-              // Size of one individual "pixel" block in the grid
               const pixelSize = ls / Math.max(rows, cols);
 
-              // Center the pixel grid to the translation point perfectly
               const startX = -(cols * pixelSize) / 2;
               const startY = -(rows * pixelSize) / 2;
 
-              // The color is directly embedded into the pixel blocks!
               ctx.fillStyle = flavor.color;
 
-              // Draw the blocks based on the matrix
               for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                   if (grid[r][c] === 1) {
-                    // +0.5 helps avoid subtle anti-aliasing gaps between pixel blocks
                     ctx.fillRect(
                       startX + c * pixelSize,
                       startY + r * pixelSize,
@@ -683,6 +694,7 @@
                   p.passedBarrier = true;
                   score++;
                   scoreDisplay.innerText = score;
+                  playSound("score"); // Play score sound!
                   createParticles(bird.x, bird.y, 15, currentFlavor);
                 }
               }
@@ -700,7 +712,6 @@
         },
       };
 
-      // Particle System
       let particles = [];
       function createParticles(x, y, count, flavorKey) {
         const flavorColor = FLAVORS[flavorKey]
@@ -740,7 +751,6 @@
         }
       }
 
-      // Game Loop & State Management
       function drawBackground() {
         if (bgImg.complete && bgImg.width > 0) {
           const bgWidth = gameHeight * (bgImg.width / bgImg.height);
@@ -748,7 +758,6 @@
           ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, gameHeight);
           ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, gameHeight);
 
-          // Failsafe for extremely wide displays
           if (bgWidth * 2 - bgScroll < gameWidth) {
             ctx.drawImage(
               bgImg,
@@ -785,16 +794,12 @@
       }
 
       function loop(timestamp) {
-        // Initialize the timestamp and calculate delta time
         if (!timestamp) timestamp = performance.now();
         if (!lastTime) lastTime = timestamp;
         let deltaTime = timestamp - lastTime;
         lastTime = timestamp;
 
-        // Cap deltaTime to prevent huge physics jumps if the browser tab is hidden
         if (deltaTime > 100) deltaTime = 100;
-
-        // At 60 FPS, 1 frame takes 16.66ms. This creates our normalized multiplier.
         let deltaMultiplier = deltaTime / 16.666;
 
         ctx.clearRect(0, 0, gameWidth, gameHeight);
@@ -817,19 +822,16 @@
             .toString()
             .padStart(2, "0")}`;
 
-          // Exponential difficulty curve
           let progress = Math.min(1, elapsedTime / maxGameTimeMs);
-          let difficultyMultiplier = Math.pow(progress, 1.5); // Stays easy longer, then ramps up hard
+          let difficultyMultiplier = Math.pow(progress, 1.5);
 
           pipeSpeed = 1.5 + 6.0 * difficultyMultiplier;
-          // Gaps now shrink from 160 down to 80 (a tighter flight path overall)
           pipeGap = 160 - 80 * difficultyMultiplier;
-          pipeSpawnRate = 180 - 145 * difficultyMultiplier; // Pipes spawn much faster towards the end
+          pipeSpawnRate = 180 - 145 * difficultyMultiplier;
 
           pipes.update(deltaMultiplier);
           bird.update(deltaMultiplier);
 
-          // Incrementing frames by the multiplier fixes background scrolling and pulsing automatically!
           frames += deltaMultiplier;
         } else if (currentState === "COUNTDOWN") {
           bird.y = gameHeight / 2 + Math.sin(Date.now() / 200) * 10;
@@ -867,12 +869,11 @@
         particles = [];
         score = 0;
         frames = 0;
-        lastTime = 0; // Reset delta timer
+        lastTime = 0;
         currentFlavor = "D";
         scoreDisplay.innerText = score;
         timerDisplay.innerText = "2:00";
 
-        // Reset to initial narrower settings
         pipeGap = 160;
         pipeSpeed = 1.5;
         pipeSpawnRate = 180;
@@ -891,13 +892,14 @@
         winScreen.classList.add("hidden");
         hud.classList.add("hidden");
         startScreen.classList.remove("hidden");
-        init(); // Reset positions visually
+        init();
       }
 
       function startCountdown() {
         if (currentState === "COUNTDOWN") return;
 
-        // Clear the 5 sec idle timer if they triggered a restart
+        initAudio(); // Initialize audio context on first interaction
+
         if (idleTimer) {
           clearInterval(idleTimer);
           idleTimer = null;
@@ -912,7 +914,7 @@
         countdownDisplay.classList.remove("hidden");
 
         if (animationId) cancelAnimationFrame(animationId);
-        loop(performance.now()); // Pass the starting timestamp
+        loop(performance.now());
 
         let count = 3;
         countdownDisplay.innerText = count;
@@ -944,6 +946,7 @@
 
       function winGame() {
         currentState = "WIN";
+        playSound("score"); // Trigger win fanfare piece
         hud.classList.add("hidden");
         winScreen.classList.remove("hidden");
         winScoreDisplay.innerText = score;
@@ -951,6 +954,12 @@
       }
 
       function gameOver(reason) {
+        if (reason === "WRONG FLAVOR!") {
+          playSound("wrong");
+        } else {
+          playSound("crash");
+        }
+
         currentState = "GAMEOVER";
         hud.classList.add("hidden");
         gameOverScreen.classList.remove("hidden");
@@ -967,7 +976,6 @@
         );
         setTimeout(() => (canvas.style.transform = "translate(0, 0)"), 150);
 
-        // 1. Enter 3-second strict cooldown
         gameOverCooldown = true;
         restartBtn.disabled = true;
         restartBtn.classList.add("opacity-50");
@@ -980,8 +988,6 @@
             restartBtn.innerText = `Cooldown: ${cd}s`;
           } else {
             clearInterval(cdTimer);
-
-            // 2. Cooldown over, start 5-second wait for input phase
             gameOverCooldown = false;
             restartBtn.disabled = false;
             restartBtn.classList.remove("opacity-50");
@@ -994,7 +1000,6 @@
               if (waitTime > 0) {
                 restartBtn.innerText = `Press Any Key to Restart (${waitTime}s)`;
               } else {
-                // 3. User was idle for 5 seconds -> Main Menu
                 clearInterval(idleTimer);
                 idleTimer = null;
                 showMainMenu();
@@ -1017,6 +1022,7 @@
       // Event Listeners
       window.addEventListener("keydown", (e) => {
         const key = e.key.toUpperCase();
+        initAudio(); // Attempt to initialize on any keydown
 
         if (currentState === "PLAYING") {
           if (flavorKeys.includes(key)) {
@@ -1028,9 +1034,8 @@
             currentState === "WIN") &&
           !gameOverCooldown
         ) {
-          // Allows ANY key press to restart if cooldown is complete
           if (flavorKeys.includes(key)) {
-            currentFlavor = key; // Update flavor proactively if they pressed D, E, or W
+            currentFlavor = key;
             updateUIState();
           }
           startCountdown();
@@ -1042,6 +1047,8 @@
         const btn = touchBtns[key];
         btn.addEventListener("pointerdown", (e) => {
           e.preventDefault();
+          initAudio(); // Attempt to initialize on pointerdown
+
           if (currentState === "PLAYING") {
             handleInput(key);
           } else if (
@@ -1058,14 +1065,17 @@
       });
 
       startBtn.addEventListener("click", () => {
+        initAudio();
         if (!gameOverCooldown) startCountdown();
       });
 
       restartBtn.addEventListener("click", () => {
+        initAudio();
         if (!gameOverCooldown) startCountdown();
       });
 
       winRestartBtn.addEventListener("click", () => {
+        initAudio();
         if (!gameOverCooldown) startCountdown();
       });
 
