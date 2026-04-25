@@ -1,889 +1,1300 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Spin the Dew</title>
     <link rel="icon" type="image/x-icon" href="logo_mtdew.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* Prevent text selection when tapping rapidly on a tablet */
-        body {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            overflow: hidden; /* Lock scrolling completely for app-like feel */
+      :root {
+        --pixel-lime: #a3e635;
+        --pixel-lime-bright: #d9f99d;
+        --pixel-green-deep: #052e16;
+        --pixel-emerald: #064e3b;
+        --pixel-shadow: rgba(0, 0, 0, 0.75);
+      }
+
+      /* Prevent text selection when tapping rapidly on a tablet */
+      body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        overflow: hidden; /* Lock scrolling completely for app-like feel */
+        position: relative;
+        font-family: "VT323", monospace;
+        letter-spacing: 0.03em;
+        background-color: #052e16;
+        background-image: linear-gradient(
+            180deg,
+            rgba(5, 46, 22, 0.22) 0%,
+            rgba(2, 44, 34, 0.42) 100%
+          ),
+          url("./CCE%20Background.png"), url("CCE%20Background.png"),
+          url("/CCE%20Background.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,z
+          rgba(217, 249, 157, 0.04),
+          rgba(217, 249, 157, 0.04) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: soft-light;
+        opacity: 0.5;
+        z-index: 1;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+            rgba(163, 230, 53, 0.22) 1px,
+            transparent 1px
+          ),
+          radial-gradient(rgba(101, 163, 13, 0.18) 1px, transparent 1px);
+        background-size: 32px 32px, 48px 48px;
+        background-position: 0 0, 12px 12px;
+        opacity: 0.55;
+        z-index: 2;
+      }
+
+      .pixel-title {
+        font-family: "Press Start 2P", monospace;
+        text-shadow: 0 0 16px rgba(163, 230, 53, 0.9),
+          4px 4px 0 var(--pixel-shadow);
+        line-height: 1.1;
+      }
+
+      .pixel-subtitle,
+      .pixel-text {
+        font-family: "VT323", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .pixel-btn {
+        font-family: "Press Start 2P", monospace;
+        border-radius: 0.6rem;
+        box-shadow: 0 0 0 3px rgba(217, 249, 157, 0.3),
+          0 14px 30px rgba(0, 0, 0, 0.55);
+        image-rendering: pixelated;
+      }
+
+      .pixel-panel {
+        border-radius: 0.8rem;
+        border-style: solid;
+        box-shadow: inset 0 0 0 2px rgba(217, 249, 157, 0.08),
+          0 0 45px rgba(132, 204, 22, 0.28);
+      }
+
+      .scene-assets {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 4;
+      }
+
+      .scene-logo {
+        position: absolute;
+        top: 1.4rem;
+        left: 1.1rem;
+        width: clamp(72px, 9vw, 124px);
+        opacity: 0.9;
+        filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+      }
+
+      .scene-bottle {
+        position: absolute;
+        width: clamp(95px, 11vw, 180px);
+        opacity: 0.75;
+        filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+      }
+
+      .scene-bottle-left {
+        left: 0.5rem;
+        bottom: -0.2rem;
+        transform: rotate(-4deg);
+      }
+
+      .scene-bottle-right {
+        right: 0.4rem;
+        top: 5.5rem;
+        transform: rotate(6deg);
+      }
+
+      @media (max-width: 768px) {
+        .scene-bottle {
+          opacity: 0.5;
+          width: clamp(70px, 15vw, 120px);
         }
 
-        /* Container scales perfectly based on the smallest screen dimension */
+        .scene-bottle-right {
+          top: 7.5rem;
+        }
+      }
+
+      /* Container scales perfectly based on the smallest screen dimension */
+      .wheel-wrapper {
+        position: relative;
+        /* Keep the wheel prominent while preserving breathing room for controls/text */
+        width: min(82vw, 58vh, 760px);
+        height: min(82vw, 58vh, 760px);
+        margin: 0 auto;
+      }
+
+      @media (max-width: 1024px) {
         .wheel-wrapper {
-            position: relative;
-            /* Keep the wheel prominent while preserving breathing room for controls/text */
-            width: min(82vw, 58vh, 760px);
-            height: min(82vw, 58vh, 760px);
-            margin: 0 auto;
+          width: min(88vw, 60vh);
+          height: min(88vw, 60vh);
         }
+      }
 
-        @media (max-width: 1024px) {
-            .wheel-wrapper {
-                width: min(88vw, 60vh);
-                height: min(88vw, 60vh);
-            }
+      @media (orientation: portrait) {
+        .wheel-wrapper {
+          width: min(90vw, 52vh);
+          height: min(90vw, 52vh);
         }
+      }
 
-        @media (orientation: portrait) {
-            .wheel-wrapper {
-                width: min(90vw, 52vh);
-                height: min(90vw, 52vh);
-            }
-        }
+      #wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow: 0 0 0 8px #022c22, 0 25px 35px -5px rgba(0, 0, 0, 0.8),
+          0 0 30px rgba(132, 204, 22, 0.4);
+        transform-origin: center center;
+        will-change: transform;
+        background-color: #022c22;
+      }
 
-        #wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            box-shadow: 0 0 0 8px #022c22, 0 25px 35px -5px rgba(0, 0, 0, 0.8), 0 0 30px rgba(132, 204, 22, 0.4);
-            transform-origin: center center;
-            will-change: transform;
-            background-color: #022c22;
-        }
+      /* The pointer arrow at the top */
+      .pointer {
+        position: absolute;
+        top: -6%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        width: 14%;
+        height: 14%;
+        filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.7));
+      }
 
-        /* The pointer arrow at the top */
-        .pointer {
-            position: absolute;
-            top: -6%;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            width: 14%;
-            height: 14%;
-            filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.7));
-        }
+      /* Modal Animations */
+      .modal-enter {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+      }
+      .modal-content-enter {
+        transform: scale(1) !important;
+      }
 
-        /* Modal Animations */
-        .modal-enter {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            visibility: visible !important;
-        }
-        .modal-content-enter {
-            transform: scale(1) !important;
-        }
-
-        /* Custom Background Pattern - Enlarged slightly for better aesthetics */
-        .bg-pattern {
-            background-image: radial-gradient(#166534 1.5px, transparent 1.5px);
-            background-size: 40px 40px;
-        }
+      /* Custom Background Pattern - Enlarged slightly for better aesthetics */
+      .bg-pattern {
+        background-image: none;
+      }
     </style>
-</head>
-<body class="bg-green-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-green-900 via-green-950 to-black min-h-screen w-screen flex flex-col items-center justify-between p-4 md:p-6 font-sans text-green-100 bg-pattern">
+  </head>
+  <body
+    class="min-h-screen w-screen flex flex-col items-center justify-between p-4 md:p-6 text-green-100 bg-pattern"
+  >
+    <div class="scene-assets" aria-hidden="true">
+      <img src="logo_mtdew.png" alt="" class="scene-logo" />
+      <img
+        src="bottom_bottle.png"
+        alt=""
+        class="scene-bottle scene-bottle-left"
+      />
+      <img
+        src="top_bottle.png"
+        alt=""
+        class="scene-bottle scene-bottle-right"
+      />
+    </div>
 
     <!-- Header -->
     <div class="flex-shrink-0 mt-2 md:mt-4 z-10">
-        <h1 class="text-5xl md:text-6xl lg:text-7xl font-black italic text-center text-lime-400 drop-shadow-[0_0_20px_rgba(132,204,22,0.9)] uppercase tracking-widest">
-            Dew to Win!
-        </h1>
-        <p class="text-center text-green-400 font-bold tracking-widest mt-1 uppercase text-sm md:text-base">Tap the button to test your luck</p>
+      <h1
+        class="pixel-title text-3xl md:text-5xl lg:text-6xl text-center text-lime-300 uppercase tracking-[0.22em]"
+      >
+        Dew to Win!
+      </h1>
+      <p
+        class="pixel-subtitle text-center text-green-300 mt-3 text-xl md:text-2xl"
+      >
+        Tap the button to test your luck
+      </p>
     </div>
 
     <!-- Responsive Wheel Area -->
     <div class="flex-1 w-full flex items-center justify-center relative py-4">
-        <div class="wheel-wrapper">
-            <!-- SVG Pointer -->
-            <svg class="pointer" viewBox="0 0 24 24" fill="#bef264" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22L2 6L22 6L12 22Z" stroke="#022c22" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-            
-            <!-- High-resolution Canvas (Scaled down by CSS for crispness) -->
-            <canvas id="wheel" width="1000" height="1000"></canvas>
-        </div>
+      <div class="wheel-wrapper">
+        <!-- SVG Pointer -->
+        <svg
+          class="pointer"
+          viewBox="0 0 24 24"
+          fill="#bef264"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 22L2 6L22 6L12 22Z"
+            stroke="#022c22"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+        </svg>
+
+        <!-- High-resolution Canvas (Scaled down by CSS for crispness) -->
+        <canvas id="wheel" width="1000" height="1000"></canvas>
+      </div>
     </div>
 
     <!-- Controls & Winner Display -->
-    <div class="flex-shrink-0 flex flex-col items-center w-full space-y-4 mb-4 md:mb-6 z-10">
-        <button id="spinBtn" class="bg-gradient-to-b from-lime-400 to-lime-600 hover:from-lime-300 hover:to-lime-500 text-green-950 font-black italic uppercase tracking-widest py-4 px-14 md:py-6 md:px-20 rounded-2xl text-4xl md:text-5xl border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all duration-150 shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_30px_rgba(132,204,22,0.6)]">
-            SPIN!
-        </button>
+    <div
+      class="flex-shrink-0 flex flex-col items-center w-full space-y-4 mb-4 md:mb-6 z-10"
+    >
+      <button
+        id="spinBtn"
+        class="pixel-btn bg-gradient-to-b from-lime-300 to-lime-500 hover:from-lime-200 hover:to-lime-400 text-green-950 uppercase py-4 px-10 md:py-6 md:px-16 text-xl md:text-3xl border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all duration-150"
+      >
+        SPIN!
+      </button>
 
-        <div id="winnerDisplay" class="h-10 md:h-12 flex items-center justify-center text-2xl md:text-3xl font-bold text-lime-400 text-center px-4 w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            <!-- Dynamic text appears here during spin -->
-            <span class="text-lime-500 font-bold drop-shadow-md">Ready to spin!</span>
-        </div>
+      <div
+        id="winnerDisplay"
+        class="pixel-text h-10 md:h-12 flex items-center justify-center text-2xl md:text-4xl text-lime-300 text-center px-4 w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+      >
+        <!-- Dynamic text appears here during spin -->
+        <span class="text-lime-500 font-bold drop-shadow-md"
+          >Ready to spin!</span
+        >
+      </div>
     </div>
 
     <!-- Result Modal Overlay -->
-    <div id="resultModal" class="fixed inset-0 flex items-center justify-center z-50 invisible opacity-0 transition-all duration-300 bg-black/80 backdrop-blur-md">
-        <!-- Removed overflow-hidden here to prevent clipping italicized text bounds -->
-        <div id="resultContent" class="text-center p-8 md:p-14 rounded-[2.5rem] border-4 border-lime-500 bg-green-950 shadow-[0_0_80px_rgba(132,204,22,0.5)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative">
-            <!-- Modal decorative glow (moved inside a wrapper to safely clip) -->
-            <div class="absolute inset-0 rounded-[2.2rem] overflow-hidden pointer-events-none">
-                <div class="absolute inset-0 bg-gradient-to-tr from-lime-500/10 to-transparent"></div>
-            </div>
-            
-            <!-- Scaled down text size slightly to guarantee it fits tablets -->
-            <h2 id="resultTitle" class="text-5xl md:text-7xl font-black italic mb-4 uppercase tracking-widest relative z-10 break-words"></h2>
-            <p id="resultPrize" class="text-2xl md:text-3xl font-bold text-white mb-8 relative z-10 drop-shadow-md"></p>
-            <button id="closeModal" class="bg-gradient-to-b from-lime-400 to-lime-600 hover:from-lime-300 hover:to-lime-500 text-green-950 font-black uppercase text-xl md:text-3xl py-4 px-10 md:px-14 rounded-xl border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10">
-                DEW IT AGAIN
-            </button>
+    <div
+      id="resultModal"
+      class="fixed inset-0 flex items-center justify-center z-50 invisible opacity-0 transition-all duration-300 bg-green-950/85 backdrop-blur-md"
+    >
+      <!-- Removed overflow-hidden here to prevent clipping italicized text bounds -->
+      <div
+        id="resultContent"
+        class="pixel-panel text-center p-8 md:p-14 border-4 border-lime-500 bg-green-950 shadow-[0_0_80px_rgba(132,204,22,0.5)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative"
+      >
+        <!-- Modal decorative glow (moved inside a wrapper to safely clip) -->
+        <div
+          class="absolute inset-0 rounded-[2.2rem] overflow-hidden pointer-events-none"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-tr from-lime-500/10 to-transparent"
+          ></div>
         </div>
+
+        <!-- Scaled down text size slightly to guarantee it fits tablets -->
+        <h2
+          id="resultTitle"
+          class="pixel-title text-3xl md:text-5xl mb-4 uppercase relative z-10 break-words"
+        ></h2>
+        <p
+          id="resultPrize"
+          class="pixel-text text-2xl md:text-4xl text-lime-100 mb-8 relative z-10 drop-shadow-md"
+        ></p>
+        <button
+          id="closeModal"
+          class="pixel-btn bg-gradient-to-b from-lime-400 to-lime-600 hover:from-lime-300 hover:to-lime-500 text-green-950 uppercase text-sm md:text-lg py-4 px-10 md:px-14 border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10"
+        >
+          DEW IT AGAIN
+        </button>
+      </div>
     </div>
 
     <script>
-        // =========================================================================
-        // ⬇️ ADD OR CHANGE YOUR WHEEL ITEMS HERE ⬇️
-        // Top 3 items will automatically stand out in bright neon green!
-        // =========================================================================
-        
-        const PRODUCT_LABELS = [
-            "G335 (black)",
-            "G335 (white)",
-            "G333 (black)",
-            "G333 (white)",
-            "G102 mouse (black)",
-            "G102 mouse (white)",
-            "Mountain Dew Shirt",
-            "Mountain Dew Keychain"
-        ];
-        const PRIZE_PRIORITY = [
-            "G335 (black)",
-            "G335 (white)",
-            "G333 (black)",
-            "G333 (white)",
-            "G102 mouse (black)",
-            "G102 mouse (white)",
-            "Mountain Dew Shirt",
-            "Mountain Dew Keychain"
-        ];
-        const LOSS_LABEL_POOL = [
-            "Try Again",
-            "Better Luck Next Time",
-            "Try Again",
-            "Better Luck Next Time",
-            "Try Again"
-        ];
+      // =========================================================================
+      // ⬇️ ADD OR CHANGE YOUR WHEEL ITEMS HERE ⬇️
+      // Top 3 items will automatically stand out in bright neon green!
+      // =========================================================================
 
-        function shuffleArray(items) {
-            const arr = [...items];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
+      const PRODUCT_LABELS = [
+        "G335 (black)",
+        "G335 (white)",
+        "G333 (black)",
+        "G333 (white)",
+        "G102 mouse (black)",
+        "G102 mouse (white)",
+        "Mountain Dew Shirt",
+        "Mountain Dew Keychain",
+      ];
+      const PRIZE_PRIORITY = [
+        "G335 (black)",
+        "G335 (white)",
+        "G333 (black)",
+        "G333 (white)",
+        "G102 mouse (black)",
+        "G102 mouse (white)",
+        "Mountain Dew Shirt",
+        "Mountain Dew Keychain",
+      ];
+      const LOSS_LABEL_POOL = [
+        "Try Again",
+        "Better Luck Next Time",
+        "Try Again",
+        "Better Luck Next Time",
+        "Try Again",
+      ];
+
+      function shuffleArray(items) {
+        const arr = [...items];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function buildWheelItems() {
+        const products = shuffleArray(PRODUCT_LABELS);
+        const losses = shuffleArray(LOSS_LABEL_POOL);
+        const totalSlices = products.length + losses.length;
+        const wheel = new Array(totalSlices);
+
+        // Alternate loss positions so loss slices are mixed around the wheel, not adjacent.
+        const startOffset = Math.random() < 0.5 ? 0 : 1;
+        const lossPositions = Array.from(
+          { length: losses.length },
+          (_, idx) => (startOffset + idx * 2) % totalSlices
+        );
+
+        for (let i = 0; i < losses.length; i++) {
+          wheel[lossPositions[i]] = losses[i];
         }
 
-        function buildWheelItems() {
-            const products = shuffleArray(PRODUCT_LABELS);
-            const losses = shuffleArray(LOSS_LABEL_POOL);
-            const totalSlices = products.length + losses.length;
-            const wheel = new Array(totalSlices);
-
-            // Alternate loss positions so loss slices are mixed around the wheel, not adjacent.
-            const startOffset = Math.random() < 0.5 ? 0 : 1;
-            const lossPositions = Array.from({ length: losses.length }, (_, idx) => (startOffset + (idx * 2)) % totalSlices);
-
-            for (let i = 0; i < losses.length; i++) {
-                wheel[lossPositions[i]] = losses[i];
-            }
-
-            let productCursor = 0;
-            for (let i = 0; i < wheel.length; i++) {
-                if (!wheel[i]) {
-                    wheel[i] = products[productCursor];
-                    productCursor += 1;
-                }
-            }
-
-            return wheel;
+        let productCursor = 0;
+        for (let i = 0; i < wheel.length; i++) {
+          if (!wheel[i]) {
+            wheel[i] = products[productCursor];
+            productCursor += 1;
+          }
         }
 
-        const wheelItems = buildWheelItems();
+        return wheel;
+      }
 
-        const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v1";
-        const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v1";
-        const DEFAULT_PRIZE_INVENTORY = {
-            "Mountain Dew Shirt": 15,
-            "Mountain Dew Keychain": 25,
-            "G102 mouse (black)": 2,
-            "G102 mouse (white)": 1,
-            "G333 (black)": 1,
-            "G333 (white)": 1,
-            "G335 (black)": 1,
-            "G335 (white)": 1
-        };
+      const wheelItems = buildWheelItems();
 
-        const DEFAULT_CHANCE_MULTIPLIERS = {
-            "Mountain Dew Shirt": 0.15,
-            "Mountain Dew Keychain": 0.25,
-            "G102 mouse (black)": 0.03,
-            "G102 mouse (white)": 0.025,
-            "G333 (black)": 0.02,
-            "G333 (white)": 0.02,
-            "G335 (black)": 0.01,
-            "G335 (white)": 0.01
-        };
+      const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v1";
+      const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v1";
+      const WHEEL_CONFIG_API_URL = "/api/wheel-config";
+      const WHEEL_SPIN_API_URL = "/api/spin";
+      const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
+      const DEFAULT_PRIZE_INVENTORY = {
+        "Mountain Dew Shirt": 15,
+        "Mountain Dew Keychain": 25,
+        "G102 mouse (black)": 2,
+        "G102 mouse (white)": 1,
+        "G333 (black)": 1,
+        "G333 (white)": 1,
+        "G335 (black)": 1,
+        "G335 (white)": 1,
+      };
 
-        function getBrowserStorage() {
-            try {
-                const testKey = "dew-wheel-storage-check";
-                localStorage.setItem(testKey, "1");
-                localStorage.removeItem(testKey);
-                return localStorage;
-            } catch {
-                return null;
+      const DEFAULT_CHANCE_MULTIPLIERS = {
+        "Mountain Dew Shirt": 0.15,
+        "Mountain Dew Keychain": 0.25,
+        "G102 mouse (black)": 0.03,
+        "G102 mouse (white)": 0.025,
+        "G333 (black)": 0.02,
+        "G333 (white)": 0.02,
+        "G335 (black)": 0.01,
+        "G335 (white)": 0.01,
+      };
+
+      function getBrowserStorage() {
+        try {
+          const testKey = "dew-wheel-storage-check";
+          localStorage.setItem(testKey, "1");
+          localStorage.removeItem(testKey);
+          return localStorage;
+        } catch {
+          return null;
+        }
+      }
+
+      function loadPrizeInventory() {
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return { ...DEFAULT_PRIZE_INVENTORY };
+          }
+
+          const saved = storage.getItem(PRIZE_INVENTORY_STORAGE_KEY);
+          if (!saved) {
+            const fresh = { ...DEFAULT_PRIZE_INVENTORY };
+            storage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(fresh));
+            return fresh;
+          }
+
+          const parsed = JSON.parse(saved);
+          const merged = { ...DEFAULT_PRIZE_INVENTORY };
+
+          for (const key of Object.keys(DEFAULT_PRIZE_INVENTORY)) {
+            const raw = parsed?.[key];
+            if (Number.isFinite(raw)) {
+              merged[key] = Math.max(0, Math.floor(raw));
             }
+          }
+
+          return merged;
+        } catch {
+          return { ...DEFAULT_PRIZE_INVENTORY };
+        }
+      }
+
+      function savePrizeInventory(inventory = prizeInventory) {
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return;
+          }
+          storage.setItem(
+            PRIZE_INVENTORY_STORAGE_KEY,
+            JSON.stringify(inventory)
+          );
+        } catch {
+          // Ignore storage errors so gameplay still works.
+        }
+      }
+
+      function loadChanceMultipliers() {
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return { ...DEFAULT_CHANCE_MULTIPLIERS };
+          }
+
+          const saved = storage.getItem(CHANCE_MULTIPLIERS_STORAGE_KEY);
+          if (!saved) {
+            const fresh = { ...DEFAULT_CHANCE_MULTIPLIERS };
+            storage.setItem(
+              CHANCE_MULTIPLIERS_STORAGE_KEY,
+              JSON.stringify(fresh)
+            );
+            return fresh;
+          }
+
+          const parsed = JSON.parse(saved);
+          const merged = { ...DEFAULT_CHANCE_MULTIPLIERS };
+
+          for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
+            const raw = parsed?.[key];
+            if (Number.isFinite(raw) && raw >= 0) {
+              merged[key] = Number(raw);
+            }
+          }
+
+          return merged;
+        } catch {
+          return { ...DEFAULT_CHANCE_MULTIPLIERS };
+        }
+      }
+
+      function saveChanceMultipliers(
+        multipliers = CHANCE_MULTIPLIERS,
+        options = {}
+      ) {
+        const { skipRemoteSync = false } = options;
+
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return;
+          }
+          storage.setItem(
+            CHANCE_MULTIPLIERS_STORAGE_KEY,
+            JSON.stringify(multipliers)
+          );
+        } catch {
+          // Ignore storage errors so gameplay still works.
         }
 
-        function loadPrizeInventory() {
-            try {
-                const storage = getBrowserStorage();
-                if (!storage) {
-                    return { ...DEFAULT_PRIZE_INVENTORY };
-                }
+        if (isRemoteStateActive && !skipRemoteSync) {
+          pushServerConfig({ multipliers }).catch(() => {
+            // Ignore remote sync errors and keep local values.
+          });
+        }
+      }
 
-                const saved = storage.getItem(PRIZE_INVENTORY_STORAGE_KEY);
-                if (!saved) {
-                    const fresh = { ...DEFAULT_PRIZE_INVENTORY };
-                    storage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(fresh));
-                    return fresh;
-                }
+      const prizeInventory = loadPrizeInventory();
 
-                const parsed = JSON.parse(saved);
-                const merged = { ...DEFAULT_PRIZE_INVENTORY };
+      // =====================================================================
+      // CHANCE TWEAK SECTION (EDIT THESE DURING PEAK HOURS)
+      // Higher multiplier = higher chance among available products.
+      // Priority requested: G335 > G333 > G102 > Shirt > Keychain.
+      // Example for peak hours:
+      // - reduce Shirt/Keychain multipliers to slow regular prize outflow
+      // - slightly increase G335/G333/G102 if you want rare hype moments
+      // =====================================================================
+      const CHANCE_MULTIPLIERS = loadChanceMultipliers();
 
-                for (const key of Object.keys(DEFAULT_PRIZE_INVENTORY)) {
-                    const raw = parsed?.[key];
-                    if (Number.isFinite(raw)) {
-                        merged[key] = Math.max(0, Math.floor(raw));
-                    }
-                }
-
-                return merged;
-            } catch {
-                return { ...DEFAULT_PRIZE_INVENTORY };
-            }
+      function setChanceMultiplier(itemName, value) {
+        if (!(itemName in DEFAULT_CHANCE_MULTIPLIERS)) {
+          return false;
         }
 
-        function savePrizeInventory(inventory = prizeInventory) {
-            try {
-                const storage = getBrowserStorage();
-                if (!storage) {
-                    return;
-                }
-                storage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
-            } catch {
-                // Ignore storage errors so gameplay still works.
-            }
+        const nextValue = Number(value);
+        if (!Number.isFinite(nextValue) || nextValue < 0) {
+          return false;
         }
 
-        function loadChanceMultipliers() {
-            try {
-                const storage = getBrowserStorage();
-                if (!storage) {
-                    return { ...DEFAULT_CHANCE_MULTIPLIERS };
-                }
+        CHANCE_MULTIPLIERS[itemName] = nextValue;
+        saveChanceMultipliers();
+        return true;
+      }
 
-                const saved = storage.getItem(CHANCE_MULTIPLIERS_STORAGE_KEY);
-                if (!saved) {
-                    const fresh = { ...DEFAULT_CHANCE_MULTIPLIERS };
-                    storage.setItem(CHANCE_MULTIPLIERS_STORAGE_KEY, JSON.stringify(fresh));
-                    return fresh;
-                }
+      function setChanceMultipliers(nextMultipliers = {}) {
+        let changed = false;
 
-                const parsed = JSON.parse(saved);
-                const merged = { ...DEFAULT_CHANCE_MULTIPLIERS };
-
-                for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
-                    const raw = parsed?.[key];
-                    if (Number.isFinite(raw) && raw >= 0) {
-                        merged[key] = Number(raw);
-                    }
-                }
-
-                return merged;
-            } catch {
-                return { ...DEFAULT_CHANCE_MULTIPLIERS };
-            }
+        for (const [itemName, value] of Object.entries(nextMultipliers)) {
+          const didUpdate = setChanceMultiplier(itemName, value);
+          changed = changed || didUpdate;
         }
 
-        function saveChanceMultipliers(multipliers = CHANCE_MULTIPLIERS) {
-            try {
-                const storage = getBrowserStorage();
-                if (!storage) {
-                    return;
-                }
-                storage.setItem(CHANCE_MULTIPLIERS_STORAGE_KEY, JSON.stringify(multipliers));
-            } catch {
-                // Ignore storage errors so gameplay still works.
-            }
+        return changed;
+      }
+
+      function resetChanceMultipliers() {
+        for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
+          CHANCE_MULTIPLIERS[key] = DEFAULT_CHANCE_MULTIPLIERS[key];
+        }
+        saveChanceMultipliers();
+      }
+
+      function applyStateFromServer(state) {
+        if (!state) {
+          return;
         }
 
-        const prizeInventory = loadPrizeInventory();
+        for (const key of Object.keys(DEFAULT_PRIZE_INVENTORY)) {
+          const raw = state.inventory?.[key];
+          if (Number.isFinite(raw)) {
+            prizeInventory[key] = Math.max(0, Math.floor(raw));
+          }
+        }
 
-        // =====================================================================
-        // CHANCE TWEAK SECTION (EDIT THESE DURING PEAK HOURS)
-        // Higher multiplier = higher chance among available products.
-        // Priority requested: G335 > G333 > G102 > Shirt > Keychain.
-        // Example for peak hours:
-        // - reduce Shirt/Keychain multipliers to slow regular prize outflow
-        // - slightly increase G335/G333/G102 if you want rare hype moments
-        // =====================================================================
-        const CHANCE_MULTIPLIERS = loadChanceMultipliers();
+        for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
+          const raw = state.multipliers?.[key];
+          if (Number.isFinite(raw) && raw >= 0) {
+            CHANCE_MULTIPLIERS[key] = Number(raw);
+          }
+        }
 
-        function setChanceMultiplier(itemName, value) {
-            if (!(itemName in DEFAULT_CHANCE_MULTIPLIERS)) {
-                return false;
+        if (Number.isFinite(state.nextMouseDueAt)) {
+          nextMouseDueAt = state.nextMouseDueAt;
+        }
+
+        savePrizeInventory(prizeInventory);
+        saveChanceMultipliers(CHANCE_MULTIPLIERS, { skipRemoteSync: true });
+      }
+
+      async function fetchServerState() {
+        try {
+          const response = await fetch(WHEEL_CONFIG_API_URL, {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const payload = await response.json();
+          if (!payload?.ok || !payload?.state) {
+            return null;
+          }
+
+          isRemoteStateActive = true;
+          applyStateFromServer(payload.state);
+          return payload.state;
+        } catch {
+          return null;
+        }
+      }
+
+      async function pushServerConfig(updatePayload = {}) {
+        try {
+          const response = await fetch(WHEEL_CONFIG_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(updatePayload),
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const payload = await response.json();
+          if (!payload?.ok || !payload?.state) {
+            return null;
+          }
+
+          isRemoteStateActive = true;
+          applyStateFromServer(payload.state);
+          return payload.state;
+        } catch {
+          return null;
+        }
+      }
+
+      async function requestServerSpin() {
+        try {
+          const response = await fetch(WHEEL_SPIN_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({}),
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const payload = await response.json();
+          if (!payload?.ok || !payload?.prize || !payload?.state) {
+            return null;
+          }
+
+          isRemoteStateActive = true;
+          applyStateFromServer(payload.state);
+          return payload;
+        } catch {
+          return null;
+        }
+      }
+
+      // =========================================================================
+      // ⬆️ ================================================================== ⬆️
+      // =========================================================================
+
+      // Strict Green Color Palettes
+      const standoutColors = [
+        "#bef264", // Lime 300 (Brightest)
+        "#a3e635", // Lime 400
+        "#84cc16", // Lime 500
+      ];
+
+      const standardColors = [
+        "#166534", // Green 800
+        "#064e3b", // Emerald 900
+        "#14532d", // Green 900
+        "#065f46", // Emerald 800
+        "#0f766e", // Teal 700
+      ];
+
+      const canvas = document.getElementById("wheel");
+      const ctx = canvas.getContext("2d");
+      const spinBtn = document.getElementById("spinBtn");
+      const winnerDisplay = document.getElementById("winnerDisplay");
+
+      // Fixed internal size prevents blurry rendering on resize
+      const CANVAS_SIZE = 1000;
+      const centerX = CANVAS_SIZE / 2;
+      const centerY = CANVAS_SIZE / 2;
+      const radius = CANVAS_SIZE / 2 - 10;
+
+      let currentRotation = 0;
+      let isSpinning = false;
+      let pendingWinnerItem = null;
+      let isRemoteStateActive = false;
+
+      const EVENT_START_HOUR = 10;
+      const EVENT_END_HOUR = 22;
+      const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
+      const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
+      const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
+      const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
+      // Tune this if spin traffic is higher/lower than expected.
+      const ESTIMATED_SPINS_PER_HOUR = 40;
+      const MIN_PRODUCT_WIN_RATE = 0.03;
+      const MAX_PRODUCT_WIN_RATE = 0.95;
+      let nextMouseDueAt = null;
+
+      const LABEL_FONT_FAMILY = '"Arial Black", "Segoe UI", sans-serif';
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function randomMouseIntervalMs() {
+        return randomInt(MOUSE_INTERVAL_MIN_MS, MOUSE_INTERVAL_MAX_MS);
+      }
+
+      function getEventWindow() {
+        const now = new Date();
+        const start = new Date(now);
+        const end = new Date(now);
+        start.setHours(EVENT_START_HOUR, 0, 0, 0);
+        end.setHours(EVENT_END_HOUR, 0, 0, 0);
+        return { start, end };
+      }
+
+      function isWithinEventWindow(nowMs = Date.now()) {
+        const { start, end } = getEventWindow();
+        return nowMs >= start.getTime() && nowMs <= end.getTime();
+      }
+
+      function initializeMouseSchedule() {
+        const nowMs = Date.now();
+        const { start, end } = getEventWindow();
+
+        if (nowMs < start.getTime()) {
+          nextMouseDueAt = start.getTime() + randomMouseIntervalMs();
+          return;
+        }
+
+        if (nowMs > end.getTime()) {
+          nextMouseDueAt = null;
+          return;
+        }
+
+        nextMouseDueAt = nowMs + randomMouseIntervalMs();
+      }
+
+      function getProductChancePercentages() {
+        const productEntries = Object.entries(prizeInventory).filter(
+          ([, count]) => count > 0
+        );
+        const total = productEntries.reduce((sum, [name, count]) => {
+          const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
+          return sum + count * multiplier;
+        }, 0);
+
+        if (!total) {
+          return {};
+        }
+
+        return Object.fromEntries(
+          productEntries.map(([name, count]) => {
+            const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
+            const weightedChance = (count * multiplier) / total;
+            return [name, Number((weightedChance * 100).toFixed(2))];
+          })
+        );
+      }
+
+      function getInventoryCountForKeys(keys) {
+        return keys.reduce((sum, key) => sum + (prizeInventory[key] || 0), 0);
+      }
+
+      function pickWeightedProduct({
+        includeOnlyKeys = null,
+        excludeKeys = [],
+      } = {}) {
+        const includeSet = includeOnlyKeys ? new Set(includeOnlyKeys) : null;
+        const excludeSet = new Set(excludeKeys);
+
+        const candidates = Object.entries(prizeInventory)
+          .filter(([name, count]) => {
+            if (count <= 0) {
+              return false;
             }
-
-            const nextValue = Number(value);
-            if (!Number.isFinite(nextValue) || nextValue < 0) {
-                return false;
+            if (includeSet && !includeSet.has(name)) {
+              return false;
             }
-
-            CHANCE_MULTIPLIERS[itemName] = nextValue;
-            saveChanceMultipliers();
+            if (excludeSet.has(name)) {
+              return false;
+            }
             return true;
-        }
-
-        function setChanceMultipliers(nextMultipliers = {}) {
-            let changed = false;
-
-            for (const [itemName, value] of Object.entries(nextMultipliers)) {
-                const didUpdate = setChanceMultiplier(itemName, value);
-                changed = changed || didUpdate;
-            }
-
-            return changed;
-        }
-
-        function resetChanceMultipliers() {
-            for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
-                CHANCE_MULTIPLIERS[key] = DEFAULT_CHANCE_MULTIPLIERS[key];
-            }
-            saveChanceMultipliers();
-        }
-
-        // =========================================================================
-        // ⬆️ ================================================================== ⬆️
-        // =========================================================================
-
-        
-        // Strict Green Color Palettes
-        const standoutColors = [
-            "#bef264", // Lime 300 (Brightest)
-            "#a3e635", // Lime 400
-            "#84cc16"  // Lime 500
-        ];
-        
-        const standardColors = [
-            "#166534", // Green 800
-            "#064e3b", // Emerald 900
-            "#14532d", // Green 900
-            "#065f46", // Emerald 800
-            "#0f766e"  // Teal 700 
-        ];
-
-        const canvas = document.getElementById("wheel");
-        const ctx = canvas.getContext("2d");
-        const spinBtn = document.getElementById("spinBtn");
-        const winnerDisplay = document.getElementById("winnerDisplay");
-
-        // Fixed internal size prevents blurry rendering on resize
-        const CANVAS_SIZE = 1000;
-        const centerX = CANVAS_SIZE / 2;
-        const centerY = CANVAS_SIZE / 2;
-        const radius = (CANVAS_SIZE / 2) - 10; 
-
-        let currentRotation = 0;
-        let isSpinning = false;
-        let pendingWinnerItem = null;
-
-        const EVENT_START_HOUR = 10;
-        const EVENT_END_HOUR = 22;
-        const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
-        const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
-        const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
-        const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
-        // Tune this if spin traffic is higher/lower than expected.
-        const ESTIMATED_SPINS_PER_HOUR = 40;
-        const MIN_PRODUCT_WIN_RATE = 0.03;
-        const MAX_PRODUCT_WIN_RATE = 0.95;
-        let nextMouseDueAt = null;
-
-        const LABEL_FONT_FAMILY = '"Arial Black", "Segoe UI", sans-serif';
-
-        function randomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function randomMouseIntervalMs() {
-            return randomInt(MOUSE_INTERVAL_MIN_MS, MOUSE_INTERVAL_MAX_MS);
-        }
-
-        function getEventWindow() {
-            const now = new Date();
-            const start = new Date(now);
-            const end = new Date(now);
-            start.setHours(EVENT_START_HOUR, 0, 0, 0);
-            end.setHours(EVENT_END_HOUR, 0, 0, 0);
-            return { start, end };
-        }
-
-        function isWithinEventWindow(nowMs = Date.now()) {
-            const { start, end } = getEventWindow();
-            return nowMs >= start.getTime() && nowMs <= end.getTime();
-        }
-
-        function initializeMouseSchedule() {
-            const nowMs = Date.now();
-            const { start, end } = getEventWindow();
-
-            if (nowMs < start.getTime()) {
-                nextMouseDueAt = start.getTime() + randomMouseIntervalMs();
-                return;
-            }
-
-            if (nowMs > end.getTime()) {
-                nextMouseDueAt = null;
-                return;
-            }
-
-            nextMouseDueAt = nowMs + randomMouseIntervalMs();
-        }
-
-        function getProductChancePercentages() {
-            const productEntries = Object.entries(prizeInventory).filter(([, count]) => count > 0);
-            const total = productEntries.reduce((sum, [name, count]) => {
-                const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
-                return sum + (count * multiplier);
-            }, 0);
-
-            if (!total) {
-                return {};
-            }
-
-            return Object.fromEntries(
-                productEntries.map(([name, count]) => {
-                    const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
-                    const weightedChance = (count * multiplier) / total;
-                    return [name, Number((weightedChance * 100).toFixed(2))];
-                })
-            );
-        }
-
-        function getInventoryCountForKeys(keys) {
-            return keys.reduce((sum, key) => sum + (prizeInventory[key] || 0), 0);
-        }
-
-        function pickWeightedProduct({ includeOnlyKeys = null, excludeKeys = [] } = {}) {
-            const includeSet = includeOnlyKeys ? new Set(includeOnlyKeys) : null;
-            const excludeSet = new Set(excludeKeys);
-
-            const candidates = Object.entries(prizeInventory)
-                .filter(([name, count]) => {
-                    if (count <= 0) {
-                        return false;
-                    }
-                    if (includeSet && !includeSet.has(name)) {
-                        return false;
-                    }
-                    if (excludeSet.has(name)) {
-                        return false;
-                    }
-                    return true;
-                })
-                .map(([name, count]) => {
-                    const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
-                    return {
-                        name,
-                        weight: count * multiplier
-                    };
-                })
-                .filter(item => item.weight > 0);
-
-            const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
-            if (!totalWeight) {
-                return null;
-            }
-
-            let roll = Math.random() * totalWeight;
-            for (const item of candidates) {
-                roll -= item.weight;
-                if (roll <= 0) {
-                    return item.name;
-                }
-            }
-
-            return candidates[candidates.length - 1].name;
-        }
-
-        function clamp(value, min, max) {
-            return Math.min(max, Math.max(min, value));
-        }
-
-        function getRemainingProductCount() {
-            return Object.values(prizeInventory).reduce((sum, count) => sum + count, 0);
-        }
-
-        function getRemainingEventMs(nowMs) {
-            const { start, end } = getEventWindow();
-            const startMs = start.getTime();
-            const endMs = end.getTime();
-
-            if (nowMs < startMs) {
-                return endMs - startMs;
-            }
-            if (nowMs > endMs) {
-                return 0;
-            }
-            return endMs - nowMs;
-        }
-
-        function pickLossLabel() {
-            return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
-        }
-
-        function shouldAwardRegularProduct(nowMs) {
-            const remainingProducts = getRemainingProductCount();
-            if (remainingProducts <= 0) {
-                return false;
-            }
-
-            const remainingEventMs = getRemainingEventMs(nowMs);
-            if (remainingEventMs <= 0) {
-                return false;
-            }
-
-            const remainingHours = remainingEventMs / (60 * 60 * 1000);
-            const estimatedRemainingSpins = Math.max(1, Math.ceil(remainingHours * ESTIMATED_SPINS_PER_HOUR));
-            const targetWinRate = clamp(
-                remainingProducts / estimatedRemainingSpins,
-                MIN_PRODUCT_WIN_RATE,
-                MAX_PRODUCT_WIN_RATE
-            );
-
-            return Math.random() < targetWinRate;
-        }
-
-        function getRandomWheelIndexForItem(itemName) {
-            const matchingIndexes = [];
-            for (let i = 0; i < wheelItems.length; i++) {
-                if (wheelItems[i] === itemName) {
-                    matchingIndexes.push(i);
-                }
-            }
-
-            if (!matchingIndexes.length) {
-                return 0;
-            }
-
-            return matchingIndexes[Math.floor(Math.random() * matchingIndexes.length)];
-        }
-
-        function pickPrizeForSpin() {
-            const nowMs = Date.now();
-            const inEventWindow = isWithinEventWindow(nowMs);
-            const mouseAvailable = getInventoryCountForKeys(MOUSE_PRIZE_KEYS) > 0;
-            const shouldForceMouse = inEventWindow && mouseAvailable && nextMouseDueAt !== null && nowMs >= nextMouseDueAt;
-
-            if (shouldForceMouse) {
-                const forcedMouse = pickWeightedProduct({ includeOnlyKeys: MOUSE_PRIZE_KEYS });
-                if (!forcedMouse) {
-                    return pickLossLabel();
-                }
-
-                prizeInventory[forcedMouse] -= 1;
-                savePrizeInventory();
-                nextMouseDueAt = nowMs + randomMouseIntervalMs();
-                return forcedMouse;
-            }
-
-            if (!inEventWindow) {
-                return pickLossLabel();
-            }
-
-            if (!shouldAwardRegularProduct(nowMs)) {
-                return pickLossLabel();
-            }
-
-            const weightedPick = pickWeightedProduct({
-                excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : []
-            });
-            if (!weightedPick) {
-                return pickLossLabel();
-            }
-
-            prizeInventory[weightedPick] -= 1;
-            savePrizeInventory();
-            return weightedPick;
-        }
-
-        function getWrappedLabelLines(label, maxLines = 2, charsPerLine = 13) {
-            const words = label.trim().split(/\s+/);
-            if (words.length === 1) {
-                return [label];
-            }
-
-            const lines = [];
-            let currentLine = "";
-
-            for (const word of words) {
-                const testLine = currentLine ? `${currentLine} ${word}` : word;
-
-                if (testLine.length <= charsPerLine || currentLine.length === 0) {
-                    currentLine = testLine;
-                    continue;
-                }
-
-                lines.push(currentLine);
-                currentLine = word;
-
-                if (lines.length === maxLines - 1) {
-                    break;
-                }
-            }
-
-            if (currentLine) {
-                const consumedWords = lines.join(" ").split(/\s+/).filter(Boolean).length;
-                const remainingWords = words.slice(consumedWords).join(" ");
-                lines.push(remainingWords || currentLine);
-            }
-
-            if (lines.length > maxLines) {
-                const firstLines = lines.slice(0, maxLines - 1);
-                const overflow = lines.slice(maxLines - 1).join(" ");
-                return [...firstLines, overflow];
-            }
-
-            return lines;
-        }
-
-        function getFittedFontSize(lines, startSize, minSize, maxWidth) {
-            let size = startSize;
-            while (size > minSize) {
-                ctx.font = `italic 900 ${size}px ${LABEL_FONT_FAMILY}`;
-                const widestLine = Math.max(...lines.map(line => ctx.measureText(line).width));
-                if (widestLine <= maxWidth) {
-                    return size;
-                }
-                size -= 2;
-            }
-            return minSize;
-        }
-
-        // Draw the wheel
-        function drawWheel() {
-            const numSlices = wheelItems.length;
-            const sliceAngle = (2 * Math.PI) / numSlices;
-
-            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-            
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            // Rotate so the first slice starts perfectly at the top pointer
-            ctx.rotate(-Math.PI / 2);
-
-            for (let i = 0; i < numSlices; i++) {
-                const angle = i * sliceAngle;
-                const isStandout = PRIZE_PRIORITY.slice(0, 3).includes(wheelItems[i]);
-
-                // Draw the colored slice
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.arc(0, 0, radius, angle, angle + sliceAngle);
-                
-                if (isStandout) {
-                    ctx.fillStyle = standoutColors[i % standoutColors.length];
-                } else {
-                    ctx.fillStyle = standardColors[i % standardColors.length];
-                }
-                ctx.fill();
-                
-                // Add an outline for crisp edges
-                ctx.lineWidth = 8;
-                ctx.strokeStyle = "#022c22"; // Green 950
-                ctx.stroke();
-
-                // Draw the text
-                ctx.save();
-                ctx.rotate(angle + sliceAngle / 2);
-                ctx.textAlign = "right";
-                ctx.textBaseline = "middle";
-                
-                ctx.fillStyle = isStandout ? "#022c22" : "#ecfccb"; 
-                
-                const labelLines = getWrappedLabelLines(wheelItems[i], 2, numSlices <= 10 ? 13 : 11);
-                const maxLabelWidth = radius * 0.54;
-                const targetSize = Math.max(34, Math.min(62, (radius * 1.15) / numSlices + 16));
-                const fontSize = getFittedFontSize(labelLines, targetSize, 24, maxLabelWidth);
-                const lineHeight = fontSize * 0.95;
-
-                ctx.font = `italic 900 ${fontSize}px ${LABEL_FONT_FAMILY}`;
-                
-                ctx.shadowColor = isStandout ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.8)";
-                ctx.shadowBlur = isStandout ? 4 : 8;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
-
-                const textAnchorX = radius * 0.86;
-                const firstLineY = -((labelLines.length - 1) * lineHeight) / 2;
-
-                for (let lineIndex = 0; lineIndex < labelLines.length; lineIndex++) {
-                    ctx.fillText(labelLines[lineIndex], textAnchorX, firstLineY + (lineIndex * lineHeight));
-                }
-                ctx.restore();
-            }
-
-            // Center details
-            ctx.beginPath();
-            ctx.arc(0, 0, radius * 0.12, 0, 2 * Math.PI);
-            ctx.fillStyle = "#022c22"; 
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.arc(0, 0, radius * 0.08, 0, 2 * Math.PI);
-            ctx.fillStyle = "#bef264"; 
-            ctx.fill();
-
-            // Inner circle highlight
-            ctx.beginPath();
-            ctx.arc(0, 0, radius * 0.04, 0, 2 * Math.PI);
-            ctx.fillStyle = "#ffffff"; 
-            ctx.fill();
-
-            ctx.restore();
-        }
-
-        // Fire Confetti Animation
-        function fireConfetti() {
-            const duration = 3000;
-            const end = Date.now() + duration;
-
-            (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#bef264', '#a3e635', '#166534', '#ffffff']
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#bef264', '#a3e635', '#166534', '#ffffff']
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
-        }
-
-        function spinWheel() {
-            if (isSpinning) return;
-            isSpinning = true;
-            winnerDisplay.innerHTML = '<span class="animate-pulse text-lime-400">Spinning...</span>';
-
-            const pickedPrize = pickPrizeForSpin();
-            pendingWinnerItem = pickedPrize;
-
-            const sliceAngle = 360 / wheelItems.length;
-            const targetIndex = getRandomWheelIndexForItem(pickedPrize);
-            const centerOfSlice = (targetIndex * sliceAngle) + (sliceAngle / 2);
-            const jitter = (Math.random() - 0.5) * sliceAngle * 0.5;
-            const desiredActualRotation = (360 - (centerOfSlice + jitter) + 360) % 360;
-
-            const currentActualRotation = ((currentRotation % 360) + 360) % 360;
-            const deltaToTarget = (desiredActualRotation - currentActualRotation + 360) % 360;
-            const baseSpins = 5 + Math.floor(Math.random() * 5);
-            const totalDegreesToSpin = (baseSpins * 360) + deltaToTarget;
-            
-            currentRotation += totalDegreesToSpin;
-
-            canvas.style.transition = "transform 5s cubic-bezier(0.1, 0.8, 0.15, 1.05)";
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-        }
-
-        // Listen for the end of the spin transition
-        canvas.addEventListener('transitionend', () => {
-            isSpinning = false;
-            
-            const actualRotation = currentRotation % 360;
-            const pointerAngle = (360 - actualRotation) % 360;
-            const sliceAngle = 360 / wheelItems.length;
-            const winnerIndex = Math.floor(pointerAngle / sliceAngle);
-
-            const winnerItem = pendingWinnerItem || wheelItems[winnerIndex];
-            pendingWinnerItem = null;
-            winnerDisplay.innerHTML = ''; 
-            
-            const resultModal = document.getElementById('resultModal');
-            const resultContent = document.getElementById('resultContent');
-            const resultTitle = document.getElementById('resultTitle');
-            const resultPrize = document.getElementById('resultPrize');
-            const closeModal = document.getElementById('closeModal');
-
-            const normalizedWinner = winnerItem.toLowerCase();
-            const isLoss = normalizedWinner.includes("try again") || normalizedWinner.includes("better luck");
-
-            if (isLoss) {
-                // Try Again Theme
-                resultContent.className = "text-center p-8 md:p-14 rounded-[2.5rem] border-4 border-green-800 bg-green-950 shadow-[0_0_80px_rgba(20,83,45,0.8)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative";
-                resultTitle.textContent = "YOU GOT NO DEW!";
-                resultTitle.className = "text-5xl md:text-7xl font-black italic mb-4 uppercase tracking-widest text-green-600 drop-shadow-[0_0_10px_rgba(22,101,52,0.8)] relative z-10 break-words";
-                resultPrize.textContent = winnerItem;
-                closeModal.className = "bg-green-800 hover:bg-green-700 text-green-200 font-black uppercase text-xl md:text-3xl py-4 px-10 md:px-14 rounded-xl border-b-8 border-green-900 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10";
-                closeModal.textContent = "TRY AGAIN";
-            } else {
-                // Win Theme 
-                resultContent.className = "text-center p-8 md:p-14 rounded-[2.5rem] border-4 border-lime-500 bg-green-950 shadow-[0_0_80px_rgba(132,204,22,0.6)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative";
-                resultTitle.textContent = "AWESOME!";
-                resultTitle.className = "text-5xl md:text-7xl font-black italic mb-4 uppercase tracking-widest text-lime-400 drop-shadow-[0_0_20px_rgba(132,204,22,0.9)] relative z-10 break-words";
-                resultPrize.textContent = `YOU WON: ${winnerItem}`;
-                closeModal.className = "bg-gradient-to-b from-lime-400 to-lime-600 hover:from-lime-300 hover:to-lime-500 text-green-950 font-black uppercase text-xl md:text-3xl py-4 px-10 md:px-14 rounded-xl border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10";
-                closeModal.textContent = "DEW IT AGAIN";
-                
-                // Trigger Confetti!
-                fireConfetti();
-            }
-
-            resultModal.classList.add('modal-enter');
-            setTimeout(() => {
-                resultContent.classList.add('modal-content-enter');
-            }, 10);
-
-            closeModal.onclick = () => {
-                resultContent.classList.remove('modal-content-enter');
-                setTimeout(() => {
-                    resultModal.classList.remove('modal-enter');
-                    winnerDisplay.innerHTML = `<span class="text-lime-500 font-bold drop-shadow-md">Ready for another spin!</span>`;
-                }, 300);
+          })
+          .map(([name, count]) => {
+            const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
+            return {
+              name,
+              weight: count * multiplier,
             };
+          })
+          .filter((item) => item.weight > 0);
+
+        const totalWeight = candidates.reduce(
+          (sum, item) => sum + item.weight,
+          0
+        );
+        if (!totalWeight) {
+          return null;
+        }
+
+        let roll = Math.random() * totalWeight;
+        for (const item of candidates) {
+          roll -= item.weight;
+          if (roll <= 0) {
+            return item.name;
+          }
+        }
+
+        return candidates[candidates.length - 1].name;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function getRemainingProductCount() {
+        return Object.values(prizeInventory).reduce(
+          (sum, count) => sum + count,
+          0
+        );
+      }
+
+      function getRemainingEventMs(nowMs) {
+        const { start, end } = getEventWindow();
+        const startMs = start.getTime();
+        const endMs = end.getTime();
+
+        if (nowMs < startMs) {
+          return endMs - startMs;
+        }
+        if (nowMs > endMs) {
+          return 0;
+        }
+        return endMs - nowMs;
+      }
+
+      function pickLossLabel() {
+        return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
+      }
+
+      function shouldAwardRegularProduct(nowMs) {
+        const remainingProducts = getRemainingProductCount();
+        if (remainingProducts <= 0) {
+          return false;
+        }
+
+        const remainingEventMs = getRemainingEventMs(nowMs);
+        if (remainingEventMs <= 0) {
+          return false;
+        }
+
+        const remainingHours = remainingEventMs / (60 * 60 * 1000);
+        const estimatedRemainingSpins = Math.max(
+          1,
+          Math.ceil(remainingHours * ESTIMATED_SPINS_PER_HOUR)
+        );
+        const targetWinRate = clamp(
+          remainingProducts / estimatedRemainingSpins,
+          MIN_PRODUCT_WIN_RATE,
+          MAX_PRODUCT_WIN_RATE
+        );
+
+        return Math.random() < targetWinRate;
+      }
+
+      function getRandomWheelIndexForItem(itemName) {
+        const matchingIndexes = [];
+        for (let i = 0; i < wheelItems.length; i++) {
+          if (wheelItems[i] === itemName) {
+            matchingIndexes.push(i);
+          }
+        }
+
+        if (!matchingIndexes.length) {
+          return 0;
+        }
+
+        return matchingIndexes[
+          Math.floor(Math.random() * matchingIndexes.length)
+        ];
+      }
+
+      function pickPrizeForSpinLocal() {
+        const nowMs = Date.now();
+        const inEventWindow = isWithinEventWindow(nowMs);
+        const mouseAvailable = getInventoryCountForKeys(MOUSE_PRIZE_KEYS) > 0;
+        const shouldForceMouse =
+          inEventWindow &&
+          mouseAvailable &&
+          nextMouseDueAt !== null &&
+          nowMs >= nextMouseDueAt;
+
+        if (shouldForceMouse) {
+          const forcedMouse = pickWeightedProduct({
+            includeOnlyKeys: MOUSE_PRIZE_KEYS,
+          });
+          if (!forcedMouse) {
+            return pickLossLabel();
+          }
+
+          prizeInventory[forcedMouse] -= 1;
+          savePrizeInventory();
+          nextMouseDueAt = nowMs + randomMouseIntervalMs();
+          return forcedMouse;
+        }
+
+        if (!inEventWindow) {
+          return pickLossLabel();
+        }
+
+        if (!shouldAwardRegularProduct(nowMs)) {
+          return pickLossLabel();
+        }
+
+        const weightedPick = pickWeightedProduct({
+          excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : [],
         });
+        if (!weightedPick) {
+          return pickLossLabel();
+        }
 
-        // Expose quick controls for live operations from browser DevTools console.
-        // Example: dewWheelConfig.setChanceMultiplier("Headset", 0.05)
-        window.dewWheelConfig = {
-            getChanceMultipliers: () => ({ ...CHANCE_MULTIPLIERS }),
-            setChanceMultiplier,
-            setChanceMultipliers,
-            resetChanceMultipliers,
-            getPrizeInventory: () => ({ ...prizeInventory }),
-            getProductChancePercentages
+        prizeInventory[weightedPick] -= 1;
+        savePrizeInventory();
+        return weightedPick;
+      }
+
+      async function pickPrizeForSpin() {
+        const remoteSpin = await requestServerSpin();
+        if (remoteSpin?.prize) {
+          return remoteSpin.prize;
+        }
+
+        return pickPrizeForSpinLocal();
+      }
+
+      function getWrappedLabelLines(label, maxLines = 2, charsPerLine = 13) {
+        const words = label.trim().split(/\s+/);
+        if (words.length === 1) {
+          return [label];
+        }
+
+        const lines = [];
+        let currentLine = "";
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+          if (testLine.length <= charsPerLine || currentLine.length === 0) {
+            currentLine = testLine;
+            continue;
+          }
+
+          lines.push(currentLine);
+          currentLine = word;
+
+          if (lines.length === maxLines - 1) {
+            break;
+          }
+        }
+
+        if (currentLine) {
+          const consumedWords = lines
+            .join(" ")
+            .split(/\s+/)
+            .filter(Boolean).length;
+          const remainingWords = words.slice(consumedWords).join(" ");
+          lines.push(remainingWords || currentLine);
+        }
+
+        if (lines.length > maxLines) {
+          const firstLines = lines.slice(0, maxLines - 1);
+          const overflow = lines.slice(maxLines - 1).join(" ");
+          return [...firstLines, overflow];
+        }
+
+        return lines;
+      }
+
+      function getFittedFontSize(lines, startSize, minSize, maxWidth) {
+        let size = startSize;
+        while (size > minSize) {
+          ctx.font = `italic 900 ${size}px ${LABEL_FONT_FAMILY}`;
+          const widestLine = Math.max(
+            ...lines.map((line) => ctx.measureText(line).width)
+          );
+          if (widestLine <= maxWidth) {
+            return size;
+          }
+          size -= 2;
+        }
+        return minSize;
+      }
+
+      // Draw the wheel
+      function drawWheel() {
+        const numSlices = wheelItems.length;
+        const sliceAngle = (2 * Math.PI) / numSlices;
+
+        ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        // Rotate so the first slice starts perfectly at the top pointer
+        ctx.rotate(-Math.PI / 2);
+
+        for (let i = 0; i < numSlices; i++) {
+          const angle = i * sliceAngle;
+          const isStandout = PRIZE_PRIORITY.slice(0, 3).includes(wheelItems[i]);
+
+          // Draw the colored slice
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, radius, angle, angle + sliceAngle);
+
+          if (isStandout) {
+            ctx.fillStyle = standoutColors[i % standoutColors.length];
+          } else {
+            ctx.fillStyle = standardColors[i % standardColors.length];
+          }
+          ctx.fill();
+
+          // Add an outline for crisp edges
+          ctx.lineWidth = 8;
+          ctx.strokeStyle = "#022c22"; // Green 950
+          ctx.stroke();
+
+          // Draw the text
+          ctx.save();
+          ctx.rotate(angle + sliceAngle / 2);
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+
+          ctx.fillStyle = isStandout ? "#022c22" : "#ecfccb";
+
+          const labelLines = getWrappedLabelLines(
+            wheelItems[i],
+            2,
+            numSlices <= 10 ? 13 : 11
+          );
+          const maxLabelWidth = radius * 0.54;
+          const targetSize = Math.max(
+            34,
+            Math.min(62, (radius * 1.15) / numSlices + 16)
+          );
+          const fontSize = getFittedFontSize(
+            labelLines,
+            targetSize,
+            24,
+            maxLabelWidth
+          );
+          const lineHeight = fontSize * 0.95;
+
+          ctx.font = `italic 900 ${fontSize}px ${LABEL_FONT_FAMILY}`;
+
+          ctx.shadowColor = isStandout
+            ? "rgba(255, 255, 255, 0.4)"
+            : "rgba(0, 0, 0, 0.8)";
+          ctx.shadowBlur = isStandout ? 4 : 8;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+
+          const textAnchorX = radius * 0.86;
+          const firstLineY = -((labelLines.length - 1) * lineHeight) / 2;
+
+          for (let lineIndex = 0; lineIndex < labelLines.length; lineIndex++) {
+            ctx.fillText(
+              labelLines[lineIndex],
+              textAnchorX,
+              firstLineY + lineIndex * lineHeight
+            );
+          }
+          ctx.restore();
+        }
+
+        // Center details
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.12, 0, 2 * Math.PI);
+        ctx.fillStyle = "#022c22";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.08, 0, 2 * Math.PI);
+        ctx.fillStyle = "#bef264";
+        ctx.fill();
+
+        // Inner circle highlight
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.04, 0, 2 * Math.PI);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Fire Confetti Animation
+      function fireConfetti() {
+        const duration = 3000;
+        const end = Date.now() + duration;
+
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ["#bef264", "#a3e635", "#166534", "#ffffff"],
+          });
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ["#bef264", "#a3e635", "#166534", "#ffffff"],
+          });
+
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+
+      async function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        winnerDisplay.innerHTML =
+          '<span class="animate-pulse text-lime-400">Spinning...</span>';
+
+        const pickedPrize = await pickPrizeForSpin();
+        pendingWinnerItem = pickedPrize;
+
+        const sliceAngle = 360 / wheelItems.length;
+        const targetIndex = getRandomWheelIndexForItem(pickedPrize);
+        const centerOfSlice = targetIndex * sliceAngle + sliceAngle / 2;
+        const jitter = (Math.random() - 0.5) * sliceAngle * 0.5;
+        const desiredActualRotation =
+          (360 - (centerOfSlice + jitter) + 360) % 360;
+
+        const currentActualRotation = ((currentRotation % 360) + 360) % 360;
+        const deltaToTarget =
+          (desiredActualRotation - currentActualRotation + 360) % 360;
+        const baseSpins = 5 + Math.floor(Math.random() * 5);
+        const totalDegreesToSpin = baseSpins * 360 + deltaToTarget;
+
+        currentRotation += totalDegreesToSpin;
+
+        canvas.style.transition =
+          "transform 5s cubic-bezier(0.1, 0.8, 0.15, 1.05)";
+        canvas.style.transform = `rotate(${currentRotation}deg)`;
+      }
+
+      // Listen for the end of the spin transition
+      canvas.addEventListener("transitionend", () => {
+        isSpinning = false;
+
+        const actualRotation = currentRotation % 360;
+        const pointerAngle = (360 - actualRotation) % 360;
+        const sliceAngle = 360 / wheelItems.length;
+        const winnerIndex = Math.floor(pointerAngle / sliceAngle);
+
+        const winnerItem = pendingWinnerItem || wheelItems[winnerIndex];
+        pendingWinnerItem = null;
+        winnerDisplay.innerHTML = "";
+
+        const resultModal = document.getElementById("resultModal");
+        const resultContent = document.getElementById("resultContent");
+        const resultTitle = document.getElementById("resultTitle");
+        const resultPrize = document.getElementById("resultPrize");
+        const closeModal = document.getElementById("closeModal");
+
+        const normalizedWinner = winnerItem.toLowerCase();
+        const isLoss =
+          normalizedWinner.includes("try again") ||
+          normalizedWinner.includes("better luck");
+
+        if (isLoss) {
+          // Try Again Theme
+          resultContent.className =
+            "pixel-panel text-center p-8 md:p-14 border-4 border-green-800 bg-green-950 shadow-[0_0_80px_rgba(20,83,45,0.8)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative";
+          resultTitle.textContent = "YOU GOT NO DEW!";
+          resultTitle.className =
+            "pixel-title text-3xl md:text-5xl mb-4 uppercase text-green-600 drop-shadow-[0_0_10px_rgba(22,101,52,0.8)] relative z-10 break-words";
+          resultPrize.textContent = winnerItem;
+          resultPrize.className =
+            "pixel-text text-2xl md:text-4xl text-green-200 mb-8 relative z-10 drop-shadow-md";
+          closeModal.className =
+            "pixel-btn bg-green-800 hover:bg-green-700 text-green-200 uppercase text-sm md:text-lg py-4 px-10 md:px-14 border-b-8 border-green-900 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10";
+          closeModal.textContent = "TRY AGAIN";
+        } else {
+          // Win Theme
+          resultContent.className =
+            "pixel-panel text-center p-8 md:p-14 border-4 border-lime-500 bg-green-950 shadow-[0_0_80px_rgba(132,204,22,0.6)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative";
+          resultTitle.textContent = "CONGRATULATION!";
+          resultTitle.className =
+            "pixel-title text-3xl md:text-5xl mb-4 uppercase text-lime-400 drop-shadow-[0_0_20px_rgba(132,204,22,0.9)] relative z-10 break-words";
+          resultPrize.textContent = `YOU WON: ${winnerItem}`;
+          resultPrize.className =
+            "pixel-text text-2xl md:text-4xl text-lime-200 mb-8 relative z-10 drop-shadow-md";
+          closeModal.className =
+            "pixel-btn bg-gradient-to-b from-lime-400 to-lime-600 hover:from-lime-300 hover:to-lime-500 text-green-950 uppercase text-sm md:text-lg py-4 px-10 md:px-14 border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all shadow-lg relative z-10";
+          closeModal.textContent = "DEW IT AGAIN";
+
+          // Trigger Confetti!
+          fireConfetti();
+        }
+
+        resultModal.classList.add("modal-enter");
+        setTimeout(() => {
+          resultContent.classList.add("modal-content-enter");
+        }, 10);
+
+        closeModal.onclick = () => {
+          resultContent.classList.remove("modal-content-enter");
+          setTimeout(() => {
+            resultModal.classList.remove("modal-enter");
+            winnerDisplay.innerHTML = `<span class="text-lime-500 font-bold drop-shadow-md">Ready for another spin!</span>`;
+          }, 300);
         };
+      });
 
-        // Initialize 
-        initializeMouseSchedule();
+      // Expose quick controls for live operations from browser DevTools console.
+      // Example: dewWheelConfig.setChanceMultiplier("Headset", 0.05)
+      window.dewWheelConfig = {
+        getChanceMultipliers: () => ({ ...CHANCE_MULTIPLIERS }),
+        setChanceMultiplier,
+        setChanceMultipliers,
+        resetChanceMultipliers,
+        getPrizeInventory: () => ({ ...prizeInventory }),
+        getProductChancePercentages,
+        syncFromServer: fetchServerState,
+        downloadInventoryXlsx: () => {
+          window.open(INVENTORY_EXPORT_API_URL, "_blank");
+        },
+      };
+
+      // Initialize
+      (async () => {
+        const serverState = await fetchServerState();
+        if (!serverState) {
+          initializeMouseSchedule();
+        }
+
         console.table(getProductChancePercentages());
         drawWheel();
-        spinBtn.addEventListener('click', spinWheel);
-
+        spinBtn.addEventListener("click", spinWheel);
+      })();
     </script>
-</body>
+  </body>
 </html>
