@@ -14,8 +14,8 @@ const DEFAULT_STATE = {
   multipliers: {
     "Mountain Dew Shirt": 1.0,
     "Mountain Dew Keychain": 0.9,
-    "G102 mouse (black)": 8.0,
-    "G102 mouse (white)": 1.3,
+    "G102 mouse (black)": 0.01,
+    "G102 mouse (white)": 0.03,
     "G333 (black)": 0,
     "G333 (white)": 1.0,
     "G335 (black)": 0.8,
