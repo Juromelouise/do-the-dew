@@ -1,27 +1,27 @@
-const STATE_KEY = "dew-wheel-state-v1";
+const STATE_KEY = "dew-wheel-state-v2";
 
 const DEFAULT_STATE = {
   inventory: {
-    "Mountain Dew Shirt": 15,
-    "Mountain Dew Keychain": 25,
+    "Mountain Dew Shirt": 7,
+    "Mountain Dew Keychain": 23,
     "G102 mouse (black)": 2,
     "G102 mouse (white)": 1,
     "G333 (black)": 1,
     "G333 (white)": 1,
     "G335 (black)": 1,
-    "G335 (white)": 1
+    "G335 (white)": 1,
   },
   multipliers: {
-    "Mountain Dew Shirt": 0.15,
-    "Mountain Dew Keychain": 0.25,
-    "G102 mouse (black)": 0.03,
-    "G102 mouse (white)": 0.025,
-    "G333 (black)": 0.02,
-    "G333 (white)": 0.02,
-    "G335 (black)": 0.01,
-    "G335 (white)": 0.01
+    "Mountain Dew Shirt": 1.5,
+    "Mountain Dew Keychain": 2.0,
+    "G102 mouse (black)": 1.0,
+    "G102 mouse (white)": 1.0,
+    "G333 (black)": 0.9,
+    "G333 (white)": 0.9,
+    "G335 (black)": 0.6,
+    "G335 (white)": 0.6,
   },
-  nextMouseDueAt: null
+  nextMouseDueAt: null,
 };
 
 const EVENT_START_HOUR = 10;
@@ -120,7 +120,10 @@ function shouldAwardRegularProduct(state, nowMs) {
   }
 
   const remainingHours = remainingEventMs / (60 * 60 * 1000);
-  const estimatedRemainingSpins = Math.max(1, Math.ceil(remainingHours * ESTIMATED_SPINS_PER_HOUR));
+  const estimatedRemainingSpins = Math.max(
+    1,
+    Math.ceil(remainingHours * ESTIMATED_SPINS_PER_HOUR)
+  );
   const targetWinRate = clamp(
     remainingProducts / estimatedRemainingSpins,
     MIN_PRODUCT_WIN_RATE,
@@ -159,7 +162,7 @@ function pickWeightedProduct(state, options = {}) {
     })
     .map(([name, count]) => ({
       name,
-      weight: count * (state.multipliers[name] || 1)
+      weight: count * (state.multipliers[name] || 1),
     }))
     .filter((item) => item.weight > 0);
 
@@ -180,8 +183,13 @@ function pickWeightedProduct(state, options = {}) {
 }
 
 function getProductChancePercentages(state) {
-  const entries = Object.entries(state.inventory).filter(([, count]) => count > 0);
-  const totalWeight = entries.reduce((sum, [name, count]) => sum + (count * (state.multipliers[name] || 1)), 0);
+  const entries = Object.entries(state.inventory).filter(
+    ([, count]) => count > 0
+  );
+  const totalWeight = entries.reduce(
+    (sum, [name, count]) => sum + count * (state.multipliers[name] || 1),
+    0
+  );
 
   if (!totalWeight) {
     return {};
@@ -189,7 +197,8 @@ function getProductChancePercentages(state) {
 
   return Object.fromEntries(
     entries.map(([name, count]) => {
-      const weightedChance = (count * (state.multipliers[name] || 1)) / totalWeight;
+      const weightedChance =
+        (count * (state.multipliers[name] || 1)) / totalWeight;
       return [name, Number((weightedChance * 100).toFixed(2))];
     })
   );
@@ -198,10 +207,16 @@ function getProductChancePercentages(state) {
 function pickPrizeAndMutateState(state, nowMs = Date.now()) {
   const inEventWindow = isWithinEventWindow(nowMs);
   const mouseAvailable = getInventoryCountForKeys(state, MOUSE_PRIZE_KEYS) > 0;
-  const shouldForceMouse = inEventWindow && mouseAvailable && Number.isFinite(state.nextMouseDueAt) && nowMs >= state.nextMouseDueAt;
+  const shouldForceMouse =
+    inEventWindow &&
+    mouseAvailable &&
+    Number.isFinite(state.nextMouseDueAt) &&
+    nowMs >= state.nextMouseDueAt;
 
   if (shouldForceMouse) {
-    const forcedMouse = pickWeightedProduct(state, { includeOnlyKeys: MOUSE_PRIZE_KEYS });
+    const forcedMouse = pickWeightedProduct(state, {
+      includeOnlyKeys: MOUSE_PRIZE_KEYS,
+    });
     if (!forcedMouse) {
       return pickLossLabel();
     }
@@ -220,7 +235,7 @@ function pickPrizeAndMutateState(state, nowMs = Date.now()) {
   }
 
   const weightedPick = pickWeightedProduct(state, {
-    excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : []
+    excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : [],
   });
 
   if (!weightedPick) {
@@ -256,15 +271,17 @@ async function callKv(parts) {
   const token = process.env.KV_REST_API_TOKEN;
 
   if (!baseUrl || !token) {
-    throw new Error("KV is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN.");
+    throw new Error(
+      "KV is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN."
+    );
   }
 
   const path = parts.map((part) => encodeURIComponent(String(part))).join("/");
   const response = await fetch(`${baseUrl}/${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (!response.ok) {
@@ -328,5 +345,5 @@ module.exports = {
   getProductChancePercentages,
   pickPrizeAndMutateState,
   getState,
-  setState
+  setState,
 };
