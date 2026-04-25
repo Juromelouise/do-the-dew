@@ -1,4 +1,4 @@
-const STATE_KEY = "dew-wheel-state-v3";
+const STATE_KEY = "dew-wheel-state-v4";
 
 const DEFAULT_STATE = {
   inventory: {
@@ -8,7 +8,7 @@ const DEFAULT_STATE = {
     "G102 mouse (white)": 1,
     "G333 (black)": 1,
     "G333 (white)": 1,
-    "G335 (black)": 1,
+    "G335 (black)": 0,
     "G335 (white)": 1,
   },
   multipliers: {
