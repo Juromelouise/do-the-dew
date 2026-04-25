@@ -435,7 +435,7 @@
       const gravity = 0.25;
       const terminalVelocity = 5;
       const flapStrength = -5;
-      const pipeWidth = 78;
+      const pipeWidth = 77;
 
       let pipeGap = 300;
       let pipeSpeed = 1;
@@ -481,7 +481,7 @@
             ctx.shadowColor = "#000000";
             const birdAspect = birdImg.width / birdImg.height;
 
-            const hSize = this.radius * 3.5;
+            const hSize = this.radius * 2.8;
             const wSize = hSize * birdAspect;
 
             ctx.drawImage(birdImg, -wSize / 2, -hSize / 2, wSize, hSize);
