@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./tailwind.output.css" />
     <!-- Add Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -391,12 +391,9 @@
         const totalSlices = products.length + losses.length;
         const wheel = new Array(totalSlices);
 
-        // Alternate loss positions so loss slices are mixed around the wheel, not adjacent.
-        const startOffset = Math.random() < 0.5 ? 0 : 1;
-        const lossPositions = Array.from(
-          { length: losses.length },
-          (_, idx) => (startOffset + idx * 2) % totalSlices
-        );
+        // Pick unique slots for losses so no wheel entry is left undefined.
+        const allIndexes = Array.from({ length: totalSlices }, (_, idx) => idx);
+        const lossPositions = shuffleArray(allIndexes).slice(0, losses.length);
 
         for (let i = 0; i < losses.length; i++) {
           wheel[lossPositions[i]] = losses[i];
@@ -1006,6 +1003,10 @@
       }
 
       function getWrappedLabelLines(label, maxLines = 2, charsPerLine = 13) {
+        if (typeof label !== "string" || !label.trim()) {
+          return ["Try Again"];
+        }
+
         const words = label.trim().split(/\s+/);
         if (words.length === 1) {
           return [label];

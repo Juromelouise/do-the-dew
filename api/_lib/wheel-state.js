@@ -1,4 +1,4 @@
-const STATE_KEY = "dew-wheel-state-v3";
+const STATE_KEY = "dew-wheel-state-v4";
 
 const DEFAULT_STATE = {
   inventory: {
@@ -14,7 +14,7 @@ const DEFAULT_STATE = {
   multipliers: {
     "Mountain Dew Shirt": 0.01,
     "Mountain Dew Keychain": 0.09,
-    "G102 mouse (black)": 0.0001,
+    "G102 mouse (black)": 0.001,
     "G102 mouse (white)": 0.03,
     "G333 (black)": 0,
     "G333 (white)": 1.0,
