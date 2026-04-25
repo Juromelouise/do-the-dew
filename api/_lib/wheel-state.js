@@ -1,4 +1,4 @@
-const STATE_KEY = "dew-wheel-state-v4";
+const STATE_KEY = "dew-wheel-state-v5";
 
 const DEFAULT_STATE = {
   inventory: {
