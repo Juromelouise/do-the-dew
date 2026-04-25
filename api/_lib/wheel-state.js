@@ -1,15 +1,15 @@
-const STATE_KEY = "dew-wheel-state-v1";
+const STATE_KEY = "dew-wheel-state-v2";
 
 const DEFAULT_STATE = {
   inventory: {
-    "Mountain Dew Shirt": 5,
-    "Mountain Dew Keychain": 15,
+    "Mountain Dew Shirt": 1,
+    "Mountain Dew Keychain": 4,
     "G102 mouse (black)": 2,
     "G102 mouse (white)": 1,
     "G333 (black)": 0,
-    "G333 (white)": 1,
+    "G333 (white)": 0,
     "G335 (black)": 0,
-    "G335 (white)": 1,
+    "G335 (white)": 0,
   },
   multipliers: {
     "Mountain Dew Shirt": 1.0,
@@ -31,7 +31,7 @@ const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
 const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
 const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
 const ESTIMATED_SPINS_PER_HOUR = 10;
-const MIN_PRODUCT_WIN_RATE = 0.30;
+const MIN_PRODUCT_WIN_RATE = 0.3;
 const MAX_PRODUCT_WIN_RATE = 0.95;
 let localStateCache = null;
 
