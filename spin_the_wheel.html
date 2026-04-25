@@ -186,6 +186,7 @@
         const wheelItems = buildWheelItems();
 
         const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v1";
+        const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v1";
         const DEFAULT_PRIZE_INVENTORY = {
             Mouse: 3,
             Earphone: 2,
@@ -194,11 +195,37 @@
             Keychain: 25
         };
 
+        const DEFAULT_CHANCE_MULTIPLIERS = {
+            Headset: 0.01,
+            Earphone: 0.02,
+            Mouse: 0.03,
+            Shirt: 0.15,
+            Keychain: 0.25
+        };
+
+        function getBrowserStorage() {
+            try {
+                const testKey = "dew-wheel-storage-check";
+                localStorage.setItem(testKey, "1");
+                localStorage.removeItem(testKey);
+                return localStorage;
+            } catch {
+                return null;
+            }
+        }
+
         function loadPrizeInventory() {
             try {
-                const saved = localStorage.getItem(PRIZE_INVENTORY_STORAGE_KEY);
-                if (!saved) {
+                const storage = getBrowserStorage();
+                if (!storage) {
                     return { ...DEFAULT_PRIZE_INVENTORY };
+                }
+
+                const saved = storage.getItem(PRIZE_INVENTORY_STORAGE_KEY);
+                if (!saved) {
+                    const fresh = { ...DEFAULT_PRIZE_INVENTORY };
+                    storage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(fresh));
+                    return fresh;
                 }
 
                 const parsed = JSON.parse(saved);
@@ -217,9 +244,55 @@
             }
         }
 
-        function savePrizeInventory() {
+        function savePrizeInventory(inventory = prizeInventory) {
             try {
-                localStorage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(prizeInventory));
+                const storage = getBrowserStorage();
+                if (!storage) {
+                    return;
+                }
+                storage.setItem(PRIZE_INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
+            } catch {
+                // Ignore storage errors so gameplay still works.
+            }
+        }
+
+        function loadChanceMultipliers() {
+            try {
+                const storage = getBrowserStorage();
+                if (!storage) {
+                    return { ...DEFAULT_CHANCE_MULTIPLIERS };
+                }
+
+                const saved = storage.getItem(CHANCE_MULTIPLIERS_STORAGE_KEY);
+                if (!saved) {
+                    const fresh = { ...DEFAULT_CHANCE_MULTIPLIERS };
+                    storage.setItem(CHANCE_MULTIPLIERS_STORAGE_KEY, JSON.stringify(fresh));
+                    return fresh;
+                }
+
+                const parsed = JSON.parse(saved);
+                const merged = { ...DEFAULT_CHANCE_MULTIPLIERS };
+
+                for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
+                    const raw = parsed?.[key];
+                    if (Number.isFinite(raw) && raw >= 0) {
+                        merged[key] = Number(raw);
+                    }
+                }
+
+                return merged;
+            } catch {
+                return { ...DEFAULT_CHANCE_MULTIPLIERS };
+            }
+        }
+
+        function saveChanceMultipliers(multipliers = CHANCE_MULTIPLIERS) {
+            try {
+                const storage = getBrowserStorage();
+                if (!storage) {
+                    return;
+                }
+                storage.setItem(CHANCE_MULTIPLIERS_STORAGE_KEY, JSON.stringify(multipliers));
             } catch {
                 // Ignore storage errors so gameplay still works.
             }
@@ -235,13 +308,40 @@
         // - reduce Shirt/Keychain multipliers to slow regular prize outflow
         // - slightly increase Headset/Earphone/Mouse if you want rare hype moments
         // =====================================================================
-        const CHANCE_MULTIPLIERS = {
-            Headset: .01,
-            Earphone: .02,
-            Mouse: .03,
-            Shirt: .15,
-            Keychain: 0.25
-        };
+        const CHANCE_MULTIPLIERS = loadChanceMultipliers();
+
+        function setChanceMultiplier(itemName, value) {
+            if (!(itemName in DEFAULT_CHANCE_MULTIPLIERS)) {
+                return false;
+            }
+
+            const nextValue = Number(value);
+            if (!Number.isFinite(nextValue) || nextValue < 0) {
+                return false;
+            }
+
+            CHANCE_MULTIPLIERS[itemName] = nextValue;
+            saveChanceMultipliers();
+            return true;
+        }
+
+        function setChanceMultipliers(nextMultipliers = {}) {
+            let changed = false;
+
+            for (const [itemName, value] of Object.entries(nextMultipliers)) {
+                const didUpdate = setChanceMultiplier(itemName, value);
+                changed = changed || didUpdate;
+            }
+
+            return changed;
+        }
+
+        function resetChanceMultipliers() {
+            for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
+                CHANCE_MULTIPLIERS[key] = DEFAULT_CHANCE_MULTIPLIERS[key];
+            }
+            saveChanceMultipliers();
+        }
 
         // =========================================================================
         // ⬆️ ================================================================== ⬆️
@@ -716,6 +816,17 @@
                 }, 300);
             };
         });
+
+        // Expose quick controls for live operations from browser DevTools console.
+        // Example: dewWheelConfig.setChanceMultiplier("Headset", 0.05)
+        window.dewWheelConfig = {
+            getChanceMultipliers: () => ({ ...CHANCE_MULTIPLIERS }),
+            setChanceMultiplier,
+            setChanceMultipliers,
+            resetChanceMultipliers,
+            getPrizeInventory: () => ({ ...prizeInventory }),
+            getProductChancePercentages
+        };
 
         // Initialize 
         initializeMouseSchedule();
