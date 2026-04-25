@@ -111,6 +111,28 @@
           0 0 45px rgba(132, 204, 22, 0.28);
       }
 
+      .hud-shell {
+        width: min(980px, calc(100vw - 2rem));
+      }
+
+      .spin-shell {
+        width: min(780px, calc(100vw - 2rem));
+      }
+
+      .intro-glow {
+        animation: pulseGlow 2.6s ease-in-out infinite;
+      }
+
+      @keyframes pulseGlow {
+        0%,
+        100% {
+          text-shadow: 0 0 12px rgba(163, 230, 53, 0.65), 4px 4px 0 var(--pixel-shadow);
+        }
+        50% {
+          text-shadow: 0 0 18px rgba(190, 242, 100, 0.95), 4px 4px 0 var(--pixel-shadow);
+        }
+      }
+
       .scene-assets {
         position: fixed;
         inset: 0;
@@ -256,10 +278,10 @@
 
     <!-- Header -->
     <div
-      class="flex-shrink-0 mt-2 md:mt-4 z-10 px-6 py-4 md:px-8 md:py-5 pixel-panel border-2 border-lime-500/40 bg-green-950/55 backdrop-blur-sm"
+      class="hud-shell flex-shrink-0 mt-2 md:mt-4 z-10 px-6 py-4 md:px-8 md:py-5 pixel-panel border-2 border-lime-500/40 bg-green-950/55 backdrop-blur-sm"
     >
       <h1
-        class="pixel-title text-3xl md:text-5xl lg:text-6xl text-center text-lime-300 uppercase tracking-[0.22em]"
+        class="pixel-title intro-glow text-3xl md:text-5xl lg:text-6xl text-center text-lime-300 uppercase tracking-[0.22em]"
       >
         Dew to Win!
       </h1>
@@ -295,7 +317,7 @@
 
     <!-- Controls & Winner Display -->
     <div
-      class="flex-shrink-0 flex flex-col items-center w-full space-y-4 mb-4 md:mb-6 z-10 px-4 py-4 md:px-6 md:py-5 pixel-panel border-2 border-lime-500/40 bg-green-950/55 backdrop-blur-sm"
+      class="spin-shell flex-shrink-0 flex flex-col items-center w-full space-y-4 mb-4 md:mb-6 z-10 px-4 py-4 md:px-6 md:py-5 pixel-panel border-2 border-lime-500/40 bg-green-950/55 backdrop-blur-sm"
     >
       <button
         id="spinBtn"
