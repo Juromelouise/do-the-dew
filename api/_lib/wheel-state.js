@@ -1,4 +1,4 @@
-const STATE_KEY = "dew-wheel-state-v9";
+const STATE_KEY = "dew-wheel-state-v1";
 
 const DEFAULT_STATE = {
   inventory: {
@@ -6,7 +6,7 @@ const DEFAULT_STATE = {
     "Mountain Dew Keychain": 15,
     "G102 mouse (black)": 2,
     "G102 mouse (white)": 1,
-    "G333 (black)": 1,
+    "G333 (black)": 0,
     "G333 (white)": 1,
     "G335 (black)": 0,
     "G335 (white)": 1,
@@ -16,7 +16,7 @@ const DEFAULT_STATE = {
     "Mountain Dew Keychain": 0.9,
     "G102 mouse (black)": 8.0,
     "G102 mouse (white)": 1.3,
-    "G333 (black)": 1.0,
+    "G333 (black)": 0,
     "G333 (white)": 1.0,
     "G335 (black)": 0.8,
     "G335 (white)": 0.8,
