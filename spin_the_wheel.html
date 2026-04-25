@@ -139,8 +139,26 @@
         // Top 3 items will automatically stand out in bright neon green!
         // =========================================================================
         
-        const PRODUCT_LABELS = ["Headset", "Earphone", "Mouse", "Shirt", "Keychain"];
-        const PRIZE_PRIORITY = ["Headset", "Earphone", "Mouse", "Shirt", "Keychain"];
+        const PRODUCT_LABELS = [
+            "G335 (black)",
+            "G335 (white)",
+            "G333 (black)",
+            "G333 (white)",
+            "G102 mouse (black)",
+            "G102 mouse (white)",
+            "Mountain Dew Shirt",
+            "Mountain Dew Keychain"
+        ];
+        const PRIZE_PRIORITY = [
+            "G335 (black)",
+            "G335 (white)",
+            "G333 (black)",
+            "G333 (white)",
+            "G102 mouse (black)",
+            "G102 mouse (white)",
+            "Mountain Dew Shirt",
+            "Mountain Dew Keychain"
+        ];
         const LOSS_LABEL_POOL = [
             "Try Again",
             "Better Luck Next Time",
@@ -188,19 +206,25 @@
         const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v1";
         const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v1";
         const DEFAULT_PRIZE_INVENTORY = {
-            Mouse: 3,
-            Earphone: 2,
-            Headset: 1,
-            Shirt: 15,
-            Keychain: 25
+            "Mountain Dew Shirt": 15,
+            "Mountain Dew Keychain": 25,
+            "G102 mouse (black)": 2,
+            "G102 mouse (white)": 1,
+            "G333 (black)": 1,
+            "G333 (white)": 1,
+            "G335 (black)": 1,
+            "G335 (white)": 1
         };
 
         const DEFAULT_CHANCE_MULTIPLIERS = {
-            Headset: 0.01,
-            Earphone: 0.02,
-            Mouse: 0.03,
-            Shirt: 0.15,
-            Keychain: 0.25
+            "Mountain Dew Shirt": 0.15,
+            "Mountain Dew Keychain": 0.25,
+            "G102 mouse (black)": 0.03,
+            "G102 mouse (white)": 0.025,
+            "G333 (black)": 0.02,
+            "G333 (white)": 0.02,
+            "G335 (black)": 0.01,
+            "G335 (white)": 0.01
         };
 
         function getBrowserStorage() {
@@ -303,10 +327,10 @@
         // =====================================================================
         // CHANCE TWEAK SECTION (EDIT THESE DURING PEAK HOURS)
         // Higher multiplier = higher chance among available products.
-        // Priority requested: Headset > Earphone > Mouse > Shirt > Keychain.
+        // Priority requested: G335 > G333 > G102 > Shirt > Keychain.
         // Example for peak hours:
         // - reduce Shirt/Keychain multipliers to slow regular prize outflow
-        // - slightly increase Headset/Earphone/Mouse if you want rare hype moments
+        // - slightly increase G335/G333/G102 if you want rare hype moments
         // =====================================================================
         const CHANCE_MULTIPLIERS = loadChanceMultipliers();
 
@@ -380,6 +404,7 @@
 
         const EVENT_START_HOUR = 10;
         const EVENT_END_HOUR = 22;
+        const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
         const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
         const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
         const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
@@ -450,9 +475,27 @@
             );
         }
 
-        function pickWeightedProduct(excludeMouse = false) {
+        function getInventoryCountForKeys(keys) {
+            return keys.reduce((sum, key) => sum + (prizeInventory[key] || 0), 0);
+        }
+
+        function pickWeightedProduct({ includeOnlyKeys = null, excludeKeys = [] } = {}) {
+            const includeSet = includeOnlyKeys ? new Set(includeOnlyKeys) : null;
+            const excludeSet = new Set(excludeKeys);
+
             const candidates = Object.entries(prizeInventory)
-                .filter(([name, count]) => count > 0 && (!excludeMouse || name !== "Mouse"))
+                .filter(([name, count]) => {
+                    if (count <= 0) {
+                        return false;
+                    }
+                    if (includeSet && !includeSet.has(name)) {
+                        return false;
+                    }
+                    if (excludeSet.has(name)) {
+                        return false;
+                    }
+                    return true;
+                })
                 .map(([name, count]) => {
                     const multiplier = CHANCE_MULTIPLIERS[name] ?? 1;
                     return {
@@ -544,14 +587,19 @@
         function pickPrizeForSpin() {
             const nowMs = Date.now();
             const inEventWindow = isWithinEventWindow(nowMs);
-            const mouseAvailable = prizeInventory.Mouse > 0;
+            const mouseAvailable = getInventoryCountForKeys(MOUSE_PRIZE_KEYS) > 0;
             const shouldForceMouse = inEventWindow && mouseAvailable && nextMouseDueAt !== null && nowMs >= nextMouseDueAt;
 
             if (shouldForceMouse) {
-                prizeInventory.Mouse -= 1;
+                const forcedMouse = pickWeightedProduct({ includeOnlyKeys: MOUSE_PRIZE_KEYS });
+                if (!forcedMouse) {
+                    return pickLossLabel();
+                }
+
+                prizeInventory[forcedMouse] -= 1;
                 savePrizeInventory();
                 nextMouseDueAt = nowMs + randomMouseIntervalMs();
-                return "Mouse";
+                return forcedMouse;
             }
 
             if (!inEventWindow) {
@@ -562,7 +610,9 @@
                 return pickLossLabel();
             }
 
-            const weightedPick = pickWeightedProduct(inEventWindow && mouseAvailable);
+            const weightedPick = pickWeightedProduct({
+                excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : []
+            });
             if (!weightedPick) {
                 return pickLossLabel();
             }
