@@ -406,7 +406,7 @@
       const wheelItems = buildWheelItems();
 
       const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v1";
-      const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v2";
+      const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v3";
       const WHEEL_CONFIG_API_URL = "/api/wheel-config";
       const WHEEL_SPIN_API_URL = "/api/spin";
       const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
@@ -734,15 +734,15 @@
       let pendingWinnerItem = null;
       let isRemoteStateActive = false;
 
-      const EVENT_START_HOUR = 10;
-      const EVENT_END_HOUR = 22;
+      const EVENT_START_HOUR = 0;
+      const EVENT_END_HOUR = 24;
       const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
       const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
       const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
       const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
       // Tune this if spin traffic is higher/lower than expected.
-      const ESTIMATED_SPINS_PER_HOUR = 40;
-      const MIN_PRODUCT_WIN_RATE = 0.03;
+      const ESTIMATED_SPINS_PER_HOUR = 10;
+      const MIN_PRODUCT_WIN_RATE = 0.30;
       const MAX_PRODUCT_WIN_RATE = 0.95;
       let nextMouseDueAt = null;
 

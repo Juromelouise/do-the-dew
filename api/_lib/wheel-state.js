@@ -1,9 +1,9 @@
-const STATE_KEY = "dew-wheel-state-v2";
+const STATE_KEY = "dew-wheel-state-v3";
 
 const DEFAULT_STATE = {
   inventory: {
-    "Mountain Dew Shirt": 7,
-    "Mountain Dew Keychain": 23,
+    "Mountain Dew Shirt": 5,
+    "Mountain Dew Keychain": 15,
     "G102 mouse (black)": 2,
     "G102 mouse (white)": 1,
     "G333 (black)": 1,
@@ -12,26 +12,26 @@ const DEFAULT_STATE = {
     "G335 (white)": 1,
   },
   multipliers: {
-    "Mountain Dew Shirt": 1.5,
-    "Mountain Dew Keychain": 2.0,
-    "G102 mouse (black)": 1.0,
-    "G102 mouse (white)": 1.0,
-    "G333 (black)": 0.9,
-    "G333 (white)": 0.9,
-    "G335 (black)": 0.6,
-    "G335 (white)": 0.6,
+    "Mountain Dew Shirt": 1.0,
+    "Mountain Dew Keychain": 0.9,
+    "G102 mouse (black)": 1.3,
+    "G102 mouse (white)": 1.3,
+    "G333 (black)": 1.0,
+    "G333 (white)": 1.0,
+    "G335 (black)": 0.8,
+    "G335 (white)": 0.8,
   },
   nextMouseDueAt: null,
 };
 
-const EVENT_START_HOUR = 10;
-const EVENT_END_HOUR = 22;
+const EVENT_START_HOUR = 0;
+const EVENT_END_HOUR = 24;
 const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
 const MOUSE_INTERVAL_MIN_MS = 3 * 60 * 60 * 1000;
 const MOUSE_INTERVAL_MAX_MS = 4 * 60 * 60 * 1000;
 const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
-const ESTIMATED_SPINS_PER_HOUR = 40;
-const MIN_PRODUCT_WIN_RATE = 0.03;
+const ESTIMATED_SPINS_PER_HOUR = 10;
+const MIN_PRODUCT_WIN_RATE = 0.30;
 const MAX_PRODUCT_WIN_RATE = 0.95;
 let localStateCache = null;
 
