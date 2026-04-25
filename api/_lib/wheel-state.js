@@ -33,6 +33,9 @@ const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
 const ESTIMATED_SPINS_PER_HOUR = 10;
 const MIN_PRODUCT_WIN_RATE = 0.3;
 const MAX_PRODUCT_WIN_RATE = 0.95;
+const LOW_STOCK_THRESHOLD = 3;
+const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.02;
+const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.12;
 let localStateCache = null;
 
 function cloneDefaults() {
@@ -124,10 +127,17 @@ function shouldAwardRegularProduct(state, nowMs) {
     1,
     Math.ceil(remainingHours * ESTIMATED_SPINS_PER_HOUR)
   );
+  const isLowStock = remainingProducts <= LOW_STOCK_THRESHOLD;
+  const minWinRate = isLowStock
+    ? LOW_STOCK_MIN_PRODUCT_WIN_RATE
+    : MIN_PRODUCT_WIN_RATE;
+  const maxWinRate = isLowStock
+    ? LOW_STOCK_MAX_PRODUCT_WIN_RATE
+    : MAX_PRODUCT_WIN_RATE;
   const targetWinRate = clamp(
     remainingProducts / estimatedRemainingSpins,
-    MIN_PRODUCT_WIN_RATE,
-    MAX_PRODUCT_WIN_RATE
+    minWinRate,
+    maxWinRate
   );
 
   return Math.random() < targetWinRate;
