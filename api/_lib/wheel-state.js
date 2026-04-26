@@ -40,7 +40,7 @@ const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
 );
 const MIN_PRODUCT_WIN_RATE = 0.5;
 const MAX_PRODUCT_WIN_RATE = 0.7;
-const LOW_STOCK_THRESHOLD = 3;
+const LOW_STOCK_THRESHOLD = 0;
 const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.1;
 const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.3;
 let localStateCache = null;
