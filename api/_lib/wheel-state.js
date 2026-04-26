@@ -9,8 +9,8 @@ const DEFAULT_STATE = {
     "G333 (black)": 1,
     "G333 (white)": 0,
     "G333 (lilac)": 1,
-    "G335 (black)": 1,
-    "G335 (white)": 1,
+    "G335 (black)": 0,
+    "G335 (white)": 0,
   },
   multipliers: {
     "Mountain Dew Shirt": 10.85,
