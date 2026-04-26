@@ -429,8 +429,8 @@
 
       const wheelItems = buildWheelItems();
 
-      const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v3";
-      const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v4";
+      const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v4";
+      const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v10";
       const WHEEL_CONFIG_API_URL = "/api/wheel-config";
       const WHEEL_SPIN_API_URL = "/api/spin";
       const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
@@ -447,15 +447,15 @@
       };
 
       const DEFAULT_CHANCE_MULTIPLIERS = {
-        "Mountain Dew Shirt": 0.85,
-        "Mountain Dew Keychain": 1.75,
-        "G102 mouse (black)": 0.06,
-        "G102 mouse (white)": 0.06,
-        "G333 (black)": 0.04,
+        "Mountain Dew Shirt": 1.85,
+        "Mountain Dew Keychain": 2.75,
+        "G102 mouse (black)": 1.0,
+        "G102 mouse (white)": 1.0,
+        "G333 (black)": 0.9,
         "G333 (white)": 0,
-        "G333 (lilac)": 0.04,
-        "G335 (black)": 0.04,
-        "G335 (white)": 0.04,
+        "G333 (lilac)": 0.9,
+        "G335 (black)": 0.5,
+        "G335 (white)": 0.5,
       };
 
       function getBrowserStorage() {

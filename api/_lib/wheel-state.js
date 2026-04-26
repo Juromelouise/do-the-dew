@@ -1,4 +1,4 @@
-const STATE_KEY = "dew-wheel-state-v8";
+const STATE_KEY = "dew-wheel-state-v10";
 
 const DEFAULT_STATE = {
   inventory: {
@@ -13,15 +13,15 @@ const DEFAULT_STATE = {
     "G335 (white)": 1,
   },
   multipliers: {
-    "Mountain Dew Shirt": 0.85,
-    "Mountain Dew Keychain": 1.75,
-    "G102 mouse (black)": 0.06,
-    "G102 mouse (white)": 0.06,
-    "G333 (black)": 0.04,
+    "Mountain Dew Shirt": 1.85,
+    "Mountain Dew Keychain": 2.75,
+    "G102 mouse (black)": 1.0,
+    "G102 mouse (white)": 1.0,
+    "G333 (black)": 0.9,
     "G333 (white)": 0,
-    "G333 (lilac)": 0.04,
-    "G335 (black)": 0.04,
-    "G335 (white)": 0.04,
+    "G333 (lilac)": 0.9,
+    "G335 (black)": 0.5,
+    "G335 (white)": 0.5,
   },
   nextMouseDueAt: null,
 };
@@ -37,8 +37,8 @@ const EVENT_DURATION_HOURS = EVENT_END_HOUR - EVENT_START_HOUR;
 const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
   ESTIMATED_TOTAL_PLAYERS / EVENT_DURATION_HOURS
 );
-const MIN_PRODUCT_WIN_RATE = 0.05;
-const MAX_PRODUCT_WIN_RATE = 0.18;
+const MIN_PRODUCT_WIN_RATE = 10.05;
+const MAX_PRODUCT_WIN_RATE = 23.1;
 const LOW_STOCK_THRESHOLD = 3;
 const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.03;
 const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.12;
