@@ -375,6 +375,7 @@
       const PRODUCT_LABELS = [
         "G102 mouse (white)",
         "G102 mouse (black)",
+        "G335 (white)",
         "Mountain Dew Shirt",
         "Mountain Dew Keychain",
       ];
@@ -434,14 +435,14 @@
       const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
       const DEFAULT_PRIZE_INVENTORY = {
         "Mountain Dew Shirt": 2,
-        "Mountain Dew Keychain": 15,
+        "Mountain Dew Keychain": 10,
         "G102 mouse (black)": 1,
         "G102 mouse (white)": 2,
         "G333 (black)": 0,
         "G333 (white)": 0,
         "G333 (lilac)": 0,
         "G335 (black)": 0,
-        "G335 (white)": 0,
+        "G335 (white)": 1,
       };
 
       const DEFAULT_CHANCE_MULTIPLIERS = {
@@ -453,7 +454,7 @@
         "G333 (white)": 0,
         "G333 (lilac)": 0.9,
         "G335 (black)": 0.5,
-        "G335 (white)": 0.5,
+        "G335 (white)": 0.01,
       };
 
       function getBrowserStorage() {
