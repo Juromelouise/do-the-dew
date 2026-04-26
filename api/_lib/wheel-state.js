@@ -28,6 +28,7 @@ const DEFAULT_STATE = {
 
 const EVENT_START_HOUR = 10;
 const EVENT_END_HOUR = 22;
+const ENFORCE_EVENT_WINDOW = false;
 const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
 const MOUSE_INTERVAL_MIN_MS = 135 * 60 * 1000;
 const MOUSE_INTERVAL_MAX_MS = 240 * 60 * 1000;
@@ -37,11 +38,11 @@ const EVENT_DURATION_HOURS = EVENT_END_HOUR - EVENT_START_HOUR;
 const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
   ESTIMATED_TOTAL_PLAYERS / EVENT_DURATION_HOURS
 );
-const MIN_PRODUCT_WIN_RATE = 30.0;
-const MAX_PRODUCT_WIN_RATE = 50.0;
+const MIN_PRODUCT_WIN_RATE = 0.30;
+const MAX_PRODUCT_WIN_RATE = 0.50;
 const LOW_STOCK_THRESHOLD = 3;
-const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.03;
-const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.12;
+const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.1;
+const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.3;
 let localStateCache = null;
 
 function cloneDefaults() {
@@ -93,6 +94,14 @@ function getEventWindow(nowMs = Date.now()) {
 function isWithinEventWindow(nowMs = Date.now()) {
   const { startMs, endMs } = getEventWindow(nowMs);
   return nowMs >= startMs && nowMs <= endMs;
+}
+
+function isPrizeWindowOpen(nowMs = Date.now()) {
+  if (!ENFORCE_EVENT_WINDOW) {
+    return true;
+  }
+
+  return isWithinEventWindow(nowMs);
 }
 
 function getRemainingEventMs(nowMs) {
@@ -221,7 +230,7 @@ function getProductChancePercentages(state) {
 }
 
 function pickPrizeAndMutateState(state, nowMs = Date.now()) {
-  const inEventWindow = isWithinEventWindow(nowMs);
+  const inEventWindow = isPrizeWindowOpen(nowMs);
   const mouseAvailable = getInventoryCountForKeys(state, MOUSE_PRIZE_KEYS) > 0;
   const shouldForceMouse =
     inEventWindow &&
@@ -264,6 +273,11 @@ function pickPrizeAndMutateState(state, nowMs = Date.now()) {
 
 function ensureMouseSchedule(state, nowMs = Date.now()) {
   if (Number.isFinite(state.nextMouseDueAt)) {
+    return;
+  }
+
+  if (!ENFORCE_EVENT_WINDOW) {
+    state.nextMouseDueAt = nowMs + randomMouseIntervalMs();
     return;
   }
 

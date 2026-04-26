@@ -762,6 +762,7 @@
 
       const EVENT_START_HOUR = 10;
       const EVENT_END_HOUR = 22;
+      const ENFORCE_EVENT_WINDOW = false;
       const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
       const MOUSE_INTERVAL_MIN_MS = 135 * 60 * 1000;
       const MOUSE_INTERVAL_MAX_MS = 240 * 60 * 1000;
@@ -771,11 +772,11 @@
       const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
         ESTIMATED_TOTAL_PLAYERS / EVENT_DURATION_HOURS
       );
-      const MIN_PRODUCT_WIN_RATE = 0.05;
-      const MAX_PRODUCT_WIN_RATE = 0.18;
+      const MIN_PRODUCT_WIN_RATE = 0.2;
+      const MAX_PRODUCT_WIN_RATE = 0.45;
       const LOW_STOCK_THRESHOLD = 3;
-      const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.03;
-      const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.12;
+      const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.1;
+      const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.3;
       let nextMouseDueAt = null;
 
       const LABEL_FONT_FAMILY = '"Arial Black", "Segoe UI", sans-serif';
@@ -802,8 +803,22 @@
         return nowMs >= start.getTime() && nowMs <= end.getTime();
       }
 
+      function isPrizeWindowOpen(nowMs = Date.now()) {
+        if (!ENFORCE_EVENT_WINDOW) {
+          return true;
+        }
+
+        return isWithinEventWindow(nowMs);
+      }
+
       function initializeMouseSchedule() {
         const nowMs = Date.now();
+
+        if (!ENFORCE_EVENT_WINDOW) {
+          nextMouseDueAt = nowMs + randomMouseIntervalMs();
+          return;
+        }
+
         const { start, end } = getEventWindow();
 
         if (nowMs < start.getTime()) {
@@ -973,7 +988,7 @@
 
       function pickPrizeForSpinLocal() {
         const nowMs = Date.now();
-        const inEventWindow = isWithinEventWindow(nowMs);
+        const inEventWindow = isPrizeWindowOpen(nowMs);
         const mouseAvailable = getInventoryCountForKeys(MOUSE_PRIZE_KEYS) > 0;
         const shouldForceMouse =
           inEventWindow &&
