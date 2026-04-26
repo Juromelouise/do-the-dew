@@ -116,10 +116,12 @@
       @keyframes pulseGlow {
         0%,
         100% {
-          text-shadow: 0 0 12px rgba(163, 230, 53, 0.65), 4px 4px 0 var(--pixel-shadow);
+          text-shadow: 0 0 12px rgba(163, 230, 53, 0.65),
+            4px 4px 0 var(--pixel-shadow);
         }
         50% {
-          text-shadow: 0 0 18px rgba(190, 242, 100, 0.95), 4px 4px 0 var(--pixel-shadow);
+          text-shadow: 0 0 18px rgba(190, 242, 100, 0.95),
+            4px 4px 0 var(--pixel-shadow);
         }
       }
 
@@ -373,8 +375,6 @@
       const PRODUCT_LABELS = [
         "G102 mouse (white)",
         "G102 mouse (black)",
-        "G333 (black)",
-        "G333 (lilac)",
         "Mountain Dew Shirt",
         "Mountain Dew Keychain",
       ];
@@ -433,13 +433,13 @@
       const WHEEL_SPIN_API_URL = "/api/spin";
       const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
       const DEFAULT_PRIZE_INVENTORY = {
-        "Mountain Dew Shirt": 8,
-        "Mountain Dew Keychain": 35,
+        "Mountain Dew Shirt": 2,
+        "Mountain Dew Keychain": 15,
         "G102 mouse (black)": 1,
-        "G102 mouse (white)": 3,
-        "G333 (black)": 1,
+        "G102 mouse (white)": 2,
+        "G333 (black)": 0,
         "G333 (white)": 0,
-        "G333 (lilac)": 1,
+        "G333 (lilac)": 0,
         "G335 (black)": 0,
         "G335 (white)": 0,
       };
