@@ -1,41 +1,47 @@
-const STATE_KEY = "dew-wheel-state-v6";
+const STATE_KEY = "dew-wheel-state-v8";
 
 const DEFAULT_STATE = {
   inventory: {
-    "Mountain Dew Shirt": 1,
-    "Mountain Dew Keychain": 6,
-    "G102 mouse (black)": 2,
-    "G102 mouse (white)": 0,
-    "G333 (black)": 0,
+    "Mountain Dew Shirt": 8,
+    "Mountain Dew Keychain": 35,
+    "G102 mouse (black)": 1,
+    "G102 mouse (white)": 3,
+    "G333 (black)": 1,
     "G333 (white)": 0,
-    "G335 (black)": 0,
-    "G335 (white)": 0,
+    "G333 (lilac)": 1,
+    "G335 (black)": 1,
+    "G335 (white)": 1,
   },
   multipliers: {
-    "Mountain Dew Shirt": 1.2,
-    "Mountain Dew Keychain": 1.0,
-    "G102 mouse (black)": 1.4,
-    "G102 mouse (white)": 0,
-    "G333 (black)": 0,
+    "Mountain Dew Shirt": 0.85,
+    "Mountain Dew Keychain": 1.75,
+    "G102 mouse (black)": 0.06,
+    "G102 mouse (white)": 0.06,
+    "G333 (black)": 0.04,
     "G333 (white)": 0,
-    "G335 (black)": 0,
-    "G335 (white)": 0,
+    "G333 (lilac)": 0.04,
+    "G335 (black)": 0.04,
+    "G335 (white)": 0.04,
   },
   nextMouseDueAt: null,
 };
 
-const EVENT_START_HOUR = 0;
-const EVENT_END_HOUR = 20;
+const EVENT_START_HOUR = 10;
+const EVENT_END_HOUR = 22;
 const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
-const MOUSE_INTERVAL_MIN_MS = 20 * 60 * 1000;
-const MOUSE_INTERVAL_MAX_MS = 35 * 60 * 1000;
+const MOUSE_INTERVAL_MIN_MS = 135 * 60 * 1000;
+const MOUSE_INTERVAL_MAX_MS = 240 * 60 * 1000;
 const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
-const ESTIMATED_SPINS_PER_HOUR = 10;
-const MIN_PRODUCT_WIN_RATE = 0.55;
-const MAX_PRODUCT_WIN_RATE = 0.99;
+const ESTIMATED_TOTAL_PLAYERS = 500;
+const EVENT_DURATION_HOURS = EVENT_END_HOUR - EVENT_START_HOUR;
+const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
+  ESTIMATED_TOTAL_PLAYERS / EVENT_DURATION_HOURS
+);
+const MIN_PRODUCT_WIN_RATE = 0.05;
+const MAX_PRODUCT_WIN_RATE = 0.18;
 const LOW_STOCK_THRESHOLD = 3;
-const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.35;
-const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.9;
+const LOW_STOCK_MIN_PRODUCT_WIN_RATE = 0.03;
+const LOW_STOCK_MAX_PRODUCT_WIN_RATE = 0.12;
 let localStateCache = null;
 
 function cloneDefaults() {
