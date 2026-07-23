@@ -436,9 +436,31 @@ async function getState() {
   const result = await callKv(["get", STATE_KEY]);
   const raw = result && result.result;
   if (!raw) {
-    const fresh = cloneDefaults();
+    const fresh = sanitizeState(cloneDefaults());
     ensureMouseSchedule(fresh);
-    await setState(fresh);
+    // SET NX: only the first concurrent initializer wins; a plain SET here
+    // could land late and clobber a CAS write that already happened.
+    const setResult = await callKvCommand([
+      "SET",
+      STATE_KEY,
+      JSON.stringify(fresh),
+      "NX",
+    ]);
+    if (setResult && setResult.result === "OK") {
+      return fresh;
+    }
+
+    // Someone else initialized (and possibly mutated) the state first.
+    const retry = await callKv(["get", STATE_KEY]);
+    const retryRaw = retry && retry.result;
+    if (retryRaw) {
+      const parsedRetry =
+        typeof retryRaw === "string" ? JSON.parse(retryRaw) : retryRaw;
+      const sanitizedRetry = sanitizeState(parsedRetry);
+      ensureMouseSchedule(sanitizedRetry);
+      return sanitizedRetry;
+    }
+
     return fresh;
   }
 

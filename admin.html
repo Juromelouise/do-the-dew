@@ -356,7 +356,8 @@
           <p class="pixel-text text-green-400/90 text-base mt-3">
             Items with &quot;mouse&quot; in the name count. While the timer is
             ON, mice are saved for the timer and can&apos;t be won on normal
-            spins. Timer changes apply instantly (no save needed).
+            spins. The two buttons above apply instantly; the ON/OFF switch
+            and the minutes are applied when you press SAVE CHANGES.
           </p>
         </section>
       </div>
@@ -469,6 +470,8 @@
       const PASSCODE_STORAGE_KEY = "dew-admin-passcode-v1";
       const MOUSE_NAME_PATTERN = /mouse/i;
       const MAX_ITEMS = 40;
+      // Names the game client renders as loss slices — not allowed as items.
+      const RESERVED_NAMES = new Set(["try again", "better luck next time"]);
 
       let passcode = "";
       let serverState = null; // last state confirmed by the server
@@ -615,8 +618,8 @@
           qtyInput.value = item.qty;
           qtyInput.className = "pixel-input w-20 text-center text-2xl py-1";
           qtyInput.onchange = () => {
-            const value = Math.max(0, Math.floor(Number(qtyInput.value) || 0));
-            item.qty = value;
+            const raw = Number(qtyInput.value);
+            item.qty = Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
             renderItems();
             updateDirtyUI();
           };
@@ -811,9 +814,20 @@
       async function saveDraft() {
         if (!isDirty()) return;
 
+        const saveBtn = $("saveBtn");
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
         // Players may have won prizes while the admin was editing. For items
-        // whose stock the admin did NOT touch, save the latest live count
-        // (kept fresh by the 30s poll) instead of the stale loaded value.
+        // whose stock the admin did NOT touch, the server keeps its own live
+        // count (preserveQtyFor); we still send a freshly-fetched value as
+        // the fallback body value.
+        try {
+          serverState = await postConfig({ verifyOnly: true });
+        } catch {
+          // Save proceeds with the last known serverState.
+        }
+
         const baselineByName = {};
         if (baselineDraft) {
           for (const base of baselineDraft.items) {
@@ -823,6 +837,7 @@
 
         const inventory = {};
         const multipliers = {};
+        const preserveQtyFor = [];
         for (const item of draft.items) {
           const base = baselineByName[item.name];
           const qtyUntouched = base && base.qty === item.qty;
@@ -832,11 +847,10 @@
               : item.qty;
           inventory[item.name] = qtyUntouched ? liveQty : item.qty;
           multipliers[item.name] = item.weight;
+          if (qtyUntouched) {
+            preserveQtyFor.push(item.name);
+          }
         }
-
-        const saveBtn = $("saveBtn");
-        saveBtn.disabled = true;
-        saveBtn.textContent = "Saving...";
 
         try {
           const state = await postConfig({
@@ -844,6 +858,7 @@
             inventory,
             multipliers,
             settings: draft.settings,
+            preserveQtyFor,
           });
           applyServerState(state);
           showToast("SAVED - changes are live");
@@ -864,11 +879,22 @@
         try {
           const state = await postConfig({ mouseTimerAction: action });
           applyServerState(state, { preserveDraft: isDirty() });
-          showToast(
-            action === "dueNow"
-              ? "Next spin will win a mouse"
-              : "Mouse timer restarted"
-          );
+          const timerLive =
+            state.settings &&
+            state.settings.mouseTimerEnabled &&
+            (state.mouseKeys || []).some(
+              (key) => (state.inventory[key] || 0) > 0
+            );
+          if (action === "dueNow") {
+            showToast(
+              timerLive
+                ? "Next spin will win a mouse"
+                : "Mouse marked due - but the timer is OFF or no mice are in stock",
+              !timerLive
+            );
+          } else {
+            showToast("Mouse timer restarted");
+          }
         } catch (error) {
           if (error.unauthorized) {
             relock("Passcode no longer valid");
@@ -887,16 +913,15 @@
         }
 
         try {
-          const response = await fetch(CONFIG_API_URL, {
-            headers: { Accept: "application/json" },
-          });
-          const payload = await response.json();
-          if (!payload || !payload.ok) {
-            throw new Error((payload && payload.error) || "Bad response");
-          }
-          applyServerState(payload.state);
+          // Authenticated read: the public GET omits the mouse timer fields.
+          const state = await postConfig({ verifyOnly: true });
+          applyServerState(state);
           showToast("Reloaded from server");
         } catch (error) {
+          if (error.unauthorized) {
+            relock("Passcode no longer valid");
+            return;
+          }
           showToast("RELOAD FAILED: " + error.message, true);
           setSyncStatus("Reload failed", false);
         }
@@ -915,6 +940,11 @@
           return;
         }
 
+        if (RESERVED_NAMES.has(name.toLowerCase())) {
+          errorEl.textContent = "That name is reserved for loss slices.";
+          return;
+        }
+
         if (
           draft.items.some(
             (item) => item.name.toLowerCase() === name.toLowerCase()
@@ -929,7 +959,10 @@
           return;
         }
 
-        const qty = Math.max(0, Math.floor(Number(qtyInput.value) || 0));
+        const qtyRaw = Number(qtyInput.value);
+        const qty = Number.isFinite(qtyRaw)
+          ? Math.max(0, Math.floor(qtyRaw))
+          : 0;
         const weightRaw = Number(weightInput.value);
         const weight =
           Number.isFinite(weightRaw) && weightRaw >= 0 ? weightRaw : 1;
@@ -970,7 +1003,9 @@
           $("gateOverlay").classList.add("hidden");
           $("adminRoot").classList.remove("hidden");
           $("saveBar").classList.remove("hidden");
-          applyServerState(state);
+          // A relock (Lock button, or 401 mid-save) keeps the draft in
+          // memory; don't wipe unsaved edits when the admin unlocks again.
+          applyServerState(state, { preserveDraft: isDirty() });
           startTimers();
           return true;
         } catch (error) {
@@ -991,20 +1026,36 @@
         }
       }
 
+      // True while the admin is in a control that can hold uncommitted
+      // keystrokes (text/number fields) — a full re-render would destroy
+      // them. Sliders and checkboxes commit instantly, and they keep focus
+      // forever after a click, so they must NOT block re-renders.
+      function isActivelyEditing() {
+        const active = document.activeElement;
+        return Boolean(
+          active &&
+            active.tagName === "INPUT" &&
+            ["text", "number", "password"].includes(active.type) &&
+            $("adminRoot").contains(active)
+        );
+      }
+
       function startTimers() {
         clearInterval(countdownTimer);
         clearInterval(pollTimer);
         countdownTimer = setInterval(renderCountdown, 1000);
         pollTimer = setInterval(async () => {
           try {
-            const response = await fetch(CONFIG_API_URL, {
-              headers: { Accept: "application/json" },
+            // Authenticated read: the public GET omits the timer fields.
+            const state = await postConfig({ verifyOnly: true });
+            applyServerState(state, {
+              preserveDraft: isDirty() || isActivelyEditing(),
             });
-            const payload = await response.json();
-            if (payload && payload.ok) {
-              applyServerState(payload.state, { preserveDraft: isDirty() });
+          } catch (error) {
+            if (error.unauthorized) {
+              relock("Passcode no longer valid");
+              return;
             }
-          } catch {
             setSyncStatus("Connection lost - retrying", false);
           }
         }, 30000);
@@ -1029,6 +1080,14 @@
         window.open(EXPORT_API_URL, "_blank")
       );
       $("lockBtn").addEventListener("click", () => {
+        if (
+          isDirty() &&
+          !confirm(
+            "You have unsaved changes. Lock anyway? (They will be kept until you unlock and can then be saved.)"
+          )
+        ) {
+          return;
+        }
         relock();
         $("gateError").textContent = "";
         $("gateInput").value = "";

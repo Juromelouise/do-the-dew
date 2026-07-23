@@ -516,12 +516,19 @@
           }
 
           // Item names are dynamic (managed on /admin.html), so accept every
-          // stored key rather than only the built-in defaults.
+          // stored key rather than only the built-in defaults. An explicitly
+          // EMPTY stored map is valid (admin removed all items) — do not
+          // resurrect the defaults; fall back only when the data is corrupt.
+          const parsedKeys = Object.keys(parsed);
           const merged = {};
           for (const [key, raw] of Object.entries(parsed)) {
             if (Number.isFinite(raw)) {
               merged[key] = Math.max(0, Math.floor(raw));
             }
+          }
+
+          if (parsedKeys.length === 0) {
+            return {};
           }
 
           return Object.keys(merged).length
@@ -569,11 +576,17 @@
             return { ...DEFAULT_CHANCE_MULTIPLIERS };
           }
 
+          const parsedKeys = Object.keys(parsed);
           const merged = {};
           for (const [key, raw] of Object.entries(parsed)) {
             if (Number.isFinite(raw) && raw >= 0) {
               merged[key] = Number(raw);
             }
+          }
+
+          // Explicitly empty is valid (all items removed on /admin.html).
+          if (parsedKeys.length === 0) {
+            return {};
           }
 
           return Object.keys(merged).length
@@ -709,7 +722,7 @@
         saveChanceMultipliers(CHANCE_MULTIPLIERS);
       }
 
-      async function fetchServerState() {
+      async function fetchServerState(options = {}) {
         try {
           const response = await fetch(WHEEL_CONFIG_API_URL, {
             method: "GET",
@@ -722,6 +735,13 @@
 
           const payload = await response.json();
           if (!payload?.ok || !payload?.state) {
+            return null;
+          }
+
+          // Re-checked AFTER the response arrives: a spin that started (or
+          // finished) while this GET was in flight has fresher state than
+          // this response — applying it would resurrect stale stock.
+          if (options.applyGuard && !options.applyGuard()) {
             return null;
           }
 
@@ -753,6 +773,7 @@
           }
 
           applyStateFromServer(payload.state);
+          stateSyncEpoch += 1;
           return payload;
         } catch {
           return null;
@@ -793,6 +814,9 @@
       let isSpinning = false;
       let pendingWinnerItem = null;
       let serverSettings = loadServerSettings();
+      // Bumped whenever spin-response state is applied, so an older in-flight
+      // poll response can detect it is stale and skip applying itself.
+      let stateSyncEpoch = 0;
 
       const EVENT_START_HOUR = 10;
       const EVENT_END_HOUR = 22;
@@ -1053,6 +1077,13 @@
         const mouseKeys = getMouseKeys();
         const mouseAvailable = getInventoryCountForKeys(mouseKeys) > 0;
         const mouseTimerActive = isMouseTimerEnabled() && mouseAvailable;
+
+        // The server keeps its exact due time private, so offline fallback
+        // runs its own schedule; start one on the first offline spin.
+        if (mouseTimerActive && nextMouseDueAt === null) {
+          nextMouseDueAt = nowMs + randomMouseIntervalMs();
+        }
+
         const shouldForceMouse =
           inEventWindow &&
           mouseTimerActive &&
@@ -1303,10 +1334,9 @@
 
         // If the prize isn't drawn yet (item added on /admin.html after the
         // last rebuild), rebuild the wheel with it included before spinning.
-        const normalizedPick = pickedPrize.toLowerCase();
-        const pickIsLoss =
-          normalizedPick.includes("try again") ||
-          normalizedPick.includes("better luck");
+        // Loss detection is by EXACT label match — item names are admin-
+        // controlled and may contain similar words.
+        const pickIsLoss = LOSS_LABELS.includes(pickedPrize);
         if (!pickIsLoss && !wheelItems.includes(pickedPrize)) {
           rebuildWheel([pickedPrize]);
         }
@@ -1350,10 +1380,9 @@
         const resultPrize = document.getElementById("resultPrize");
         const closeModal = document.getElementById("closeModal");
 
-        const normalizedWinner = winnerItem.toLowerCase();
-        const isLoss =
-          normalizedWinner.includes("try again") ||
-          normalizedWinner.includes("better luck");
+        // Exact match only: an admin-added prize named e.g. "Try Again
+        // Sticker" is a real win, not a loss.
+        const isLoss = LOSS_LABELS.includes(winnerItem);
 
         if (isLoss) {
           // Try Again Theme
@@ -1434,7 +1463,10 @@
           if (isSpinning) {
             return;
           }
-          const refreshed = await fetchServerState();
+          const epochBefore = stateSyncEpoch;
+          const refreshed = await fetchServerState({
+            applyGuard: () => !isSpinning && stateSyncEpoch === epochBefore,
+          });
           if (refreshed) {
             rebuildWheelIfChanged();
           }

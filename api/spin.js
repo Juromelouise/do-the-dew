@@ -24,6 +24,8 @@ module.exports = async function handler(req, res) {
       return pickPrizeAndMutateState(current, Date.now());
     });
 
+    // nextMouseDueAt is deliberately omitted: this response is public and the
+    // exact time of the next guaranteed mouse drop must stay hidden.
     sendJson(res, 200, {
       ok: true,
       prize,
@@ -31,7 +33,6 @@ module.exports = async function handler(req, res) {
         inventory: state.inventory,
         multipliers: state.multipliers,
         settings: state.settings,
-        nextMouseDueAt: state.nextMouseDueAt,
         chancePercentages: getProductChancePercentages(state)
       }
     });
