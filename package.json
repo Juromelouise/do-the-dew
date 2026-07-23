@@ -2,6 +2,9 @@
   "name": "mountain-dew-wheel",
   "private": true,
   "version": "1.0.0",
+  "scripts": {
+    "pvp:local": "node scripts/pvp-local-server.js"
+  },
   "dependencies": {
     "xlsx": "^0.18.5"
   },

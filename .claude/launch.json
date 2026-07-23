@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dew-pvp",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/pvp-local-server.js", "8123"],
+      "port": 8123
+    }
+  ]
+}

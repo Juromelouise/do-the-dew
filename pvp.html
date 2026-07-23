@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Do The Dew — PVP</title>
+    <link rel="icon" type="image/x-icon" href="logo_mtdew.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Montserrat:ital,wght@1,900&family=Press+Start+2P&display=swap");
+
+      body {
+        background-color: #050505;
+        color: white;
+        font-family: "Montserrat", sans-serif;
+        touch-action: none;
+        overflow: hidden;
+      }
+
+      .dew-text {
+        font-family: "Black Ops One", cursive;
+        background: linear-gradient(to bottom, #ffffff, #88ff00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        filter: drop-shadow(0px 0px 5px rgba(136, 255, 0, 0.8));
+      }
+
+      .neon-border {
+        box-shadow: 0 0 10px #88ff00, inset 0 0 10px #88ff00;
+        border: 2px solid #88ff00;
+      }
+
+      .btn-dew {
+        background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+        border: 2px solid #333;
+        color: #555;
+        transition: all 0.1s;
+      }
+
+      .btn-dew.active {
+        border-color: #88ff00;
+        color: #88ff00;
+        box-shadow: 0 0 15px rgba(136, 255, 0, 0.5),
+          inset 0 0 10px rgba(136, 255, 0, 0.2);
+        transform: scale(1.05);
+      }
+
+      #btn-D.active {
+        border-color: #88ff00;
+        color: #88ff00;
+        box-shadow: 0 0 15px rgba(136, 255, 0, 0.5);
+      }
+
+      #btn-E.active {
+        border-color: #00ff44;
+        color: #00ff44;
+        box-shadow: 0 0 15px rgba(0, 255, 68, 0.5);
+      }
+
+      #btn-W.active {
+        border-color: #ccff00;
+        color: #ccff00;
+        box-shadow: 0 0 15px rgba(204, 255, 0, 0.5);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      #game-container {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+        height: 100vh;
+        max-height: 950px;
+        background: radial-gradient(circle at center, #112211 0%, #000000 100%);
+      }
+
+      .ready-chip {
+        border: 2px solid #333;
+        color: #666;
+        transition: all 0.2s;
+      }
+
+      .ready-chip.is-ready {
+        border-color: #88ff00;
+        color: #88ff00;
+        box-shadow: 0 0 12px rgba(136, 255, 0, 0.5);
+      }
+    </style>
+  </head>
+
+  <body class="flex items-center justify-center w-screen h-screen">
+    <div
+      id="game-container"
+      class="w-full shadow-2xl neon-border rounded-xl overflow-hidden flex flex-col"
+    >
+      <!-- Canvas wrapper -->
+      <div class="relative flex-grow">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- UI Overlay -->
+        <div
+          id="ui-layer"
+          class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center"
+        >
+          <!-- HUD (Playing State) -->
+          <div
+            id="hud"
+            class="absolute top-8 w-full px-6 flex justify-between items-start hidden"
+          >
+            <div class="flex flex-col items-start">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Score</span
+              >
+              <div class="text-4xl dew-text" id="scoreDisplay">0</div>
+            </div>
+            <div class="flex flex-col items-center">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Time</span
+              >
+              <div class="text-3xl dew-text text-white" id="timerDisplay">
+                0:00
+              </div>
+            </div>
+            <div class="flex flex-col items-end">
+              <span
+                class="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1"
+                >Next Flavor</span
+              >
+              <div
+                id="flavorDisplay"
+                class="text-2xl font-black italic tracking-widest transition-colors duration-200"
+                style="color: #88ff00; text-shadow: 0 0 10px #88ff00"
+              >
+                INCOMING...
+              </div>
+            </div>
+          </div>
+
+          <!-- Opponent status strip -->
+          <div
+            id="oppStrip"
+            class="absolute top-28 left-1/2 -translate-x-1/2 hidden px-4 py-1 rounded-full bg-black/70 border border-[#334422] text-xs font-bold uppercase tracking-widest"
+          >
+            <span id="oppLabel" class="text-gray-400">PLAYER 2</span>
+            <span class="text-gray-600 mx-1">·</span>
+            <span id="oppScore" class="text-white">0</span>
+            <span class="text-gray-600 mx-1">·</span>
+            <span id="oppStatus" class="text-[#88ff00]">ALIVE</span>
+          </div>
+
+          <!-- Lobby / Ready Screen -->
+          <div
+            id="lobbyScreen"
+            class="text-center p-4 sm:p-5 bg-black/90 rounded-2xl neon-border backdrop-blur-sm pointer-events-auto flex flex-col items-center w-11/12 max-w-sm"
+          >
+            <div id="playerBadge" class="dew-text text-4xl mb-1 tracking-tight">
+              PLAYER 1
+            </div>
+            <div
+              id="roomLabel"
+              class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2"
+            >
+              ROOM: MAIN
+            </div>
+            <img
+              src="game_mech.jpg"
+              alt="Game Mechanics"
+              class="w-full h-auto max-h-[40vh] object-contain rounded-lg mb-3 shadow-[0_0_15px_rgba(136,255,0,0.2)] border border-[#88ff00]/30"
+            />
+            <div class="flex gap-3 w-full mb-3">
+              <div
+                id="chip1"
+                class="ready-chip flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-widest"
+              >
+                P1 <span class="chip-state">WAITING</span>
+              </div>
+              <div
+                id="chip2"
+                class="ready-chip flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-widest"
+              >
+                P2 <span class="chip-state">WAITING</span>
+              </div>
+            </div>
+            <div
+              id="readyPrompt"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-3 px-4 rounded-full text-sm w-full leading-tight"
+            >
+              PRESS D / E / W TO READY
+            </div>
+            <div
+              id="connStatus"
+              class="mt-3 text-[10px] font-bold uppercase tracking-widest text-yellow-400"
+            >
+              CONNECTING...
+            </div>
+          </div>
+
+          <!-- Lose Screen -->
+          <div
+            id="loseScreen"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#eaff00] shadow-[0_0_30px_rgba(234,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md"
+          >
+            <h2
+              class="text-2xl text-[#eaff00] mb-4 mt-2 leading-relaxed"
+              style="
+                font-family: 'Press Start 2P', cursive;
+                text-shadow: 0 0 10px rgba(234, 255, 0, 0.5);
+              "
+            >
+              Game Over
+            </h2>
+            <p
+              id="loseReason"
+              class="text-red-400 font-black uppercase tracking-widest text-sm mb-4"
+            >
+              CRASHED!
+            </p>
+            <p
+              class="text-white text-[10px] mb-6 leading-loose"
+              style="
+                font-family: 'Press Start 2P', cursive;
+                text-shadow: 2px 2px 0px #000;
+              "
+            >
+              YOU GOT NO GAME,<br /><span style="color: #88ff00"
+                >WHEN YOU PLAY NO DEW</span
+              >
+            </p>
+            <p class="text-gray-400 mb-2 uppercase font-bold text-sm">
+              Final Score
+            </p>
+            <p id="loseScore" class="text-6xl dew-text mb-4">0</p>
+            <p
+              class="text-gray-500 text-[10px] uppercase tracking-widest"
+              id="loseCountdown"
+            >
+              Next match in 8...
+            </p>
+          </div>
+
+          <!-- Win Screen -->
+          <div
+            id="winScreen"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-[#88ff00] shadow-[0_0_30px_rgba(136,255,0,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md"
+          >
+            <h2
+              class="text-4xl sm:text-5xl text-[#88ff00] font-black italic mb-2 tracking-tighter"
+              style="
+                font-family: 'Black Ops One', cursive;
+                text-shadow: 0 0 10px rgba(136, 255, 0, 0.5);
+              "
+            >
+              You got the dew!
+            </h2>
+            <p
+              id="winnerLabel"
+              class="text-white font-black uppercase tracking-widest text-lg mb-4"
+            >
+              PLAYER 1 WINS!
+            </p>
+            <p class="text-gray-400 mb-2 uppercase font-bold text-sm">
+              Final Score
+            </p>
+            <p id="winScore" class="text-6xl dew-text mb-4">0</p>
+            <p
+              class="text-gray-500 text-[10px] uppercase tracking-widest"
+              id="winCountdown"
+            >
+              Next match in 8...
+            </p>
+          </div>
+
+          <!-- Double KO Screen -->
+          <div
+            id="drawScreen"
+            class="text-center p-6 bg-black/90 rounded-2xl border-2 border-white shadow-[0_0_30px_rgba(255,255,255,0.5)] backdrop-blur-sm hidden pointer-events-auto w-11/12 max-w-md"
+          >
+            <h2
+              class="text-3xl text-white mb-4 mt-2 leading-relaxed"
+              style="
+                font-family: 'Press Start 2P', cursive;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+              "
+            >
+              DOUBLE KO!
+            </h2>
+            <p
+              class="text-[#88ff00] font-black uppercase tracking-widest text-lg mb-4"
+            >
+              REMATCH INCOMING...
+            </p>
+            <p class="text-gray-400 mb-2 uppercase font-bold text-sm">Score</p>
+            <p id="drawScore" class="text-6xl dew-text mb-4">0</p>
+          </div>
+
+          <!-- Countdown Display -->
+          <div
+            id="countdownDisplay"
+            class="hidden absolute inset-0 flex items-center justify-center text-[10rem] dew-text font-black z-50 transition-transform duration-200 pointer-events-none"
+          >
+            3
+          </div>
+
+          <!-- Player picker fallback (only if ?p= is missing) -->
+          <div
+            id="pickerScreen"
+            class="hidden absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center gap-6 pointer-events-auto"
+          >
+            <div class="dew-text text-3xl">WHICH SCREEN IS THIS?</div>
+            <button
+              id="pick1"
+              class="bg-[#88ff00] text-black font-black uppercase tracking-widest py-4 px-10 rounded-full text-lg"
+            >
+              PLAYER 1
+            </button>
+            <button
+              id="pick2"
+              class="bg-[#ccff00] text-black font-black uppercase tracking-widest py-4 px-10 rounded-full text-lg"
+            >
+              PLAYER 2
+            </button>
+            <p class="text-gray-500 text-xs uppercase tracking-widest">
+              Tip: bookmark pvp.html?p=1 and pvp.html?p=2 to skip this
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flavor indicator bar (lights up your current flavor) -->
+      <div
+        class="h-32 bg-black border-t-2 border-[#224411] flex items-center justify-center gap-4 px-4 pb-4 select-none"
+      >
+        <div
+          id="btn-D"
+          class="btn-dew active flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="5" fill="#88ff00" />
+            <rect x="1" y="0" width="2" height="1" fill="#88ff00" />
+            <rect x="1" y="4" width="2" height="1" fill="#88ff00" />
+            <rect x="3" y="1" width="1" height="3" fill="#88ff00" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >GG</span
+          >
+        </div>
+        <div
+          id="btn-E"
+          class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 4 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="5" fill="#00ff44" />
+            <rect x="1" y="0" width="3" height="1" fill="#00ff44" />
+            <rect x="1" y="2" width="2" height="1" fill="#00ff44" />
+            <rect x="1" y="4" width="3" height="1" fill="#00ff44" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >BANGIS</span
+          >
+        </div>
+        <div
+          id="btn-W"
+          class="btn-dew flex-1 h-full py-2 rounded-xl flex flex-col items-center justify-center"
+        >
+          <svg viewBox="0 0 5 5" class="h-7 mb-1 pointer-events-none">
+            <rect x="0" y="0" width="1" height="3" fill="#ccff00" />
+            <rect x="1" y="2" width="1" height="3" fill="#ccff00" />
+            <rect x="2" y="0" width="1" height="3" fill="#ccff00" />
+            <rect x="3" y="2" width="1" height="3" fill="#ccff00" />
+            <rect x="4" y="0" width="1" height="3" fill="#ccff00" />
+          </svg>
+          <span class="text-[10px] font-bold tracking-widest opacity-70"
+            >FUEL</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // UI Elements
+      const lobbyScreen = document.getElementById("lobbyScreen");
+      const loseScreen = document.getElementById("loseScreen");
+      const winScreen = document.getElementById("winScreen");
+      const drawScreen = document.getElementById("drawScreen");
+      const pickerScreen = document.getElementById("pickerScreen");
+      const hud = document.getElementById("hud");
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      const timerDisplay = document.getElementById("timerDisplay");
+      const flavorDisplay = document.getElementById("flavorDisplay");
+      const countdownDisplay = document.getElementById("countdownDisplay");
+      const playerBadge = document.getElementById("playerBadge");
+      const roomLabel = document.getElementById("roomLabel");
+      const connStatus = document.getElementById("connStatus");
+      const chip1 = document.getElementById("chip1");
+      const chip2 = document.getElementById("chip2");
+      const oppStrip = document.getElementById("oppStrip");
+      const oppLabel = document.getElementById("oppLabel");
+      const oppScoreEl = document.getElementById("oppScore");
+      const oppStatusEl = document.getElementById("oppStatus");
+      const loseReason = document.getElementById("loseReason");
+      const loseScore = document.getElementById("loseScore");
+      const loseCountdown = document.getElementById("loseCountdown");
+      const winnerLabel = document.getElementById("winnerLabel");
+      const winScore = document.getElementById("winScore");
+      const winCountdown = document.getElementById("winCountdown");
+      const drawScore = document.getElementById("drawScore");
+      const touchBtns = {
+        D: document.getElementById("btn-D"),
+        E: document.getElementById("btn-E"),
+        W: document.getElementById("btn-W"),
+      };
+
+      // ---------- RETRO AUDIO SYSTEM ----------
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function initAudio() {
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      }
+
+      function playSound(type) {
+        if (!audioCtx || audioCtx.state === "suspended") return;
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "flap") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === "score") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.setValueAtTime(1318.51, now + 0.05);
+          gainNode.gain.setValueAtTime(0.2, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "crash") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === "wrong") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(110, now);
+          osc.frequency.setValueAtTime(90, now + 0.1);
+          gainNode.gain.setValueAtTime(0.25, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      }
+
+      // ---------- LOGICAL GAME SIZE ----------
+      let gameWidth = 0;
+      let gameHeight = 0;
+
+      function resizeCanvas() {
+        const wrapper = canvas.parentElement;
+        gameWidth = wrapper.clientWidth;
+        gameHeight = wrapper.clientHeight;
+
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = gameWidth * dpr;
+        canvas.height = gameHeight * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      // Setup Images
+      const bgImg = new Image();
+      bgImg.src = "Background-mtdew.png";
+      const birdImg = new Image();
+      birdImg.src = "logo_mtdew.png";
+      const topPipeImg = new Image();
+      topPipeImg.src = "top_bottle.png";
+      const bottomPipeImg = new Image();
+      bottomPipeImg.src = "bottom_bottle.png";
+
+      const PIXEL_LETTERS = {
+        D: [
+          [1, 1, 1, 0],
+          [1, 0, 0, 1],
+          [1, 0, 0, 1],
+          [1, 0, 0, 1],
+          [1, 1, 1, 0],
+        ],
+        E: [
+          [1, 1, 1, 1],
+          [1, 0, 0, 0],
+          [1, 1, 1, 0],
+          [1, 0, 0, 0],
+          [1, 1, 1, 1],
+        ],
+        W: [
+          [1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1],
+          [1, 1, 1, 1, 1],
+          [0, 1, 0, 1, 0],
+          [0, 1, 0, 1, 0],
+        ],
+      };
+
+      // ---------- SEEDED RNG (identical obstacles on both laptops) ----------
+      function mulberry32(a) {
+        return function () {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      let rng = mulberry32(1);
+
+      // Game Constants & Variables
+      const gravity = 0.25;
+      const terminalVelocity = 5;
+      const flapStrength = -5;
+      const pipeWidth = 77;
+
+      let pipeGap = 400;
+      let pipeSpeed = 1;
+      let pipeSpawnRate = 400;
+
+      // Obstacles are anchored to the SHARED match clock, not local frames:
+      // pipes spawn at scheduled elapsed times and their x position derives
+      // from a scroll integral of that clock, so a lag spike or throttled
+      // tab on one laptop cannot drift its obstacle timeline away from the
+      // other's. Pipes spawn at a fixed logical x so both laptops agree on
+      // travel time regardless of window width.
+      const PIPE_SPAWN_X = 600;
+      let scrollDist = 0;
+      let lastScrollElapsed = 0;
+      let nextSpawnElapsed = 3000;
+
+      const FLAVORS = {
+        D: { name: "GG", color: "#88ff00", rgb: "136, 255, 0" },
+        E: { name: "BANGIS", color: "#00ff44", rgb: "0, 255, 68" },
+        W: { name: "FUEL", color: "#ccff00", rgb: "204, 255, 0" },
+      };
+      const flavorKeys = ["D", "E", "W"];
+
+      let frames = 0;
+      let lastTime = 0;
+      let score = 0;
+      let currentFlavor = "D";
+      let animationId = null;
+      let gameStartTime = 0;
+
+      // Sudden death: difficulty maxes out at 1:00 and holds until someone drops.
+      const RAMP_MS = 60000;
+
+      // ---------- MATCH / NETWORK STATE ----------
+      // States: LOBBY, COUNTDOWN, PLAYING, DOWN (dead, adjudicating), RESULT
+      let currentState = "LOBBY";
+      let me = null; // 1 or 2
+      let opp = null;
+
+      const API_URL = "/api/pvp";
+      const urlParams = new URLSearchParams(location.search);
+      const room =
+        (urlParams.get("room") || "main")
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "")
+          .slice(0, 32) || "main";
+
+      // Deaths are compared using match-elapsed clocks aligned via the server;
+      // this window absorbs cross-laptop clock error. Within it = DOUBLE KO.
+      const KO_WINDOW_MS = 500;
+      const COUNTDOWN_LEAD_MS = 4500;
+
+      let myReady = false;
+      let oppReady = false;
+      let oppScore = 0;
+      let oppAlive = true;
+      let oppAliveAt = null; // opponent's own match-elapsed when they last reported alive
+      let myDeath = null; // {t, reason, score}
+      let myDeathWall = 0;
+      let oppDeath = null;
+      let adjudicated = false;
+
+      let currentMatchId = null;
+      let handledMatchId = null;
+      let matchStartLocal = 0;
+      let matchStartServer = 0;
+      let oppOutOfMatchSince = 0;
+      let lastMemFlag = false;
+
+      let returnTimer = null;
+      let countdownTicker = null;
+      let lastResetReq = 0;
+      let lastSeenOppReset = 0;
+
+      // Connection health
+      let clockOffset = 0;
+      let bestRtt = Infinity;
+      let lastGoodSyncAt = 0;
+      let lastOppSeenWall = 0;
+      let lastOppSeenServer = 0;
+      let syncInFlight = false;
+      let syncQueued = false;
+      let pollTimer = null;
+      let hostStartInFlight = false;
+
+      function serverNowEst() {
+        return Date.now() + clockOffset;
+      }
+
+      function matchElapsed() {
+        return Date.now() - gameStartTime;
+      }
+
+      // ---------- NETWORK ----------
+      function buildMyData() {
+        const d = {
+          s: currentState,
+          ready: myReady,
+          matchId: currentMatchId,
+          score: score,
+          reset: lastResetReq,
+        };
+        // Report liveness while playing, and keep reporting it after winning
+        // alive so a dead opponent can adjudicate their loss quickly.
+        if (
+          currentState === "PLAYING" ||
+          (currentState === "RESULT" && !myDeath && currentMatchId)
+        )
+          d.aliveAt = matchElapsed();
+        if (myDeath) d.death = myDeath;
+        return d;
+      }
+
+      async function syncOnce() {
+        if (me === null) return;
+        if (syncInFlight) {
+          syncQueued = true;
+          return;
+        }
+        syncInFlight = true;
+        const t0 = Date.now();
+        try {
+          const resp = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "sync",
+              room: room,
+              player: me,
+              data: buildMyData(),
+            }),
+          });
+          if (!resp.ok) throw new Error("http " + resp.status);
+          const json = await resp.json();
+          const t1 = Date.now();
+          const rtt = t1 - t0;
+
+          // Clock alignment: prefer low-round-trip samples
+          if (rtt <= bestRtt + 250) {
+            const sampleOffset = json.now + rtt / 2 - t1;
+            clockOffset = lastGoodSyncAt
+              ? clockOffset * 0.7 + sampleOffset * 0.3
+              : sampleOffset;
+            if (rtt < bestRtt) bestRtt = rtt;
+          }
+          lastGoodSyncAt = t1;
+          lastMemFlag = Boolean(json.mem);
+
+          handleServerState(json.opp, json.match, json.now);
+        } catch (e) {
+          // Connection trouble: watchdog handles sustained failure
+        } finally {
+          syncInFlight = false;
+          if (syncQueued) {
+            syncQueued = false;
+            syncOnce();
+          }
+        }
+      }
+
+      function syncNow() {
+        syncOnce();
+        schedulePoll();
+      }
+
+      function schedulePoll() {
+        clearTimeout(pollTimer);
+        const active =
+          currentState === "PLAYING" ||
+          currentState === "COUNTDOWN" ||
+          currentState === "DOWN";
+        pollTimer = setTimeout(async () => {
+          await syncOnce();
+          schedulePoll();
+        }, active ? 400 : 900);
+      }
+
+      function handleServerState(oppEntry, match, serverNow) {
+        // Opponent presence
+        if (oppEntry && oppEntry.seen && oppEntry.seen !== lastOppSeenServer) {
+          lastOppSeenServer = oppEntry.seen;
+          lastOppSeenWall = Date.now();
+        }
+        const oppFresh =
+          oppEntry && oppEntry.seen && serverNow - oppEntry.seen < 6000;
+        const od = oppFresh ? oppEntry.data : null;
+
+        // Opponent-requested reset
+        if (od && od.reset && od.reset > lastSeenOppReset) {
+          const isNew = lastSeenOppReset !== 0;
+          lastSeenOppReset = od.reset;
+          if (isNew && currentState !== "LOBBY") {
+            toLobby("opp-reset");
+            return;
+          }
+        }
+        if (od && lastSeenOppReset === 0) lastSeenOppReset = od.reset || -1;
+
+        // Lobby: ready states + host match creation
+        if (currentState === "LOBBY") {
+          oppReady = Boolean(od && od.ready && od.s === "LOBBY");
+          updateLobbyUI();
+
+          const liveMatch =
+            match &&
+            match.id !== handledMatchId &&
+            serverNow < match.startAt + 1500;
+
+          // Only join a match if we are still ready and it was created
+          // AFTER any reset we issued (match.id is the host's server-time).
+          if (liveMatch && myReady && match.id > lastResetReq) {
+            beginCountdown(match);
+            return;
+          }
+
+          if (
+            me === 1 &&
+            myReady &&
+            oppReady &&
+            !liveMatch &&
+            lastGoodSyncAt > 0
+          ) {
+            hostStart();
+          }
+          return;
+        }
+
+        // Mid-match: notice the opponent abandoning the match (reload, reset
+        // we somehow missed) — they report LOBBY with no matchId.
+        if (currentState === "PLAYING" || currentState === "DOWN") {
+          if (od && od.s === "LOBBY" && od.matchId !== currentMatchId) {
+            if (!oppOutOfMatchSince) oppOutOfMatchSince = Date.now();
+          } else if (od) {
+            oppOutOfMatchSince = 0;
+          }
+        }
+
+        // Mid-match: opponent score / death (only for THIS match)
+        const sameMatch = od && od.matchId === currentMatchId;
+        if (sameMatch) {
+          if (typeof od.score === "number" && od.score !== oppScore) {
+            oppScore = od.score;
+            updateOppStrip();
+          }
+          if (typeof od.aliveAt === "number") {
+            oppAliveAt = Math.max(oppAliveAt || 0, od.aliveAt);
+          }
+          if (od.death && !oppDeath) {
+            oppDeath = od.death;
+            oppAlive = false;
+            oppScore = od.death.score;
+            updateOppStrip();
+          }
+        }
+        evaluateOutcome();
+      }
+
+      async function hostStart() {
+        if (hostStartInFlight || currentState !== "LOBBY") return;
+        hostStartInFlight = true;
+        const resetBefore = lastResetReq;
+        const m = {
+          id: Math.floor(serverNowEst()),
+          seed: (Math.floor(Math.random() * 2147483647) || 1) >>> 0,
+          startAt: Math.floor(serverNowEst() + COUNTDOWN_LEAD_MS),
+        };
+        try {
+          const resp = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "start",
+              room: room,
+              player: 1,
+              match: m,
+            }),
+          });
+          // Re-validate after the round trip: an R reset (or anything that
+          // un-readied us) while the request was in flight must not start
+          // a ghost countdown from the lobby.
+          if (
+            resp.ok &&
+            currentState === "LOBBY" &&
+            myReady &&
+            lastResetReq === resetBefore
+          ) {
+            beginCountdown(m);
+          }
+        } catch (e) {
+          // Poll loop retries while both stay ready
+        } finally {
+          hostStartInFlight = false;
+        }
+      }
+
+      async function clearMatch(matchId) {
+        try {
+          await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "clear",
+              room: room,
+              player: me,
+              matchId: matchId || null,
+            }),
+          });
+        } catch (e) {
+          // Match record also expires on its own TTL
+        }
+      }
+
+      // ---------- ENTITIES ----------
+      const bird = {
+        x: 60,
+        y: 0,
+        radius: 16,
+        velocity: 0,
+        rotation: 0,
+
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.rotation);
+
+          const flavorColor = FLAVORS[currentFlavor].color;
+
+          if (birdImg.complete && birdImg.width > 0) {
+            ctx.globalCompositeOperation = "source-over";
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "#000000";
+            const birdAspect = birdImg.width / birdImg.height;
+
+            const hSize = this.radius * 2.2;
+            const wSize = hSize * birdAspect;
+
+            ctx.drawImage(birdImg, -wSize / 2, -hSize / 2, wSize, hSize);
+          } else {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = flavorColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, this.radius);
+            grad.addColorStop(0, "#ffffff");
+            grad.addColorStop(0.4, flavorColor);
+            grad.addColorStop(1, "#000000");
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        },
+
+        update(deltaMultiplier) {
+          this.velocity += gravity * deltaMultiplier;
+          if (this.velocity > terminalVelocity)
+            this.velocity = terminalVelocity;
+          this.y += this.velocity * deltaMultiplier;
+
+          this.rotation = Math.min(
+            Math.PI / 4,
+            Math.max(-Math.PI / 4, this.velocity * 0.1)
+          );
+
+          if (this.y + this.radius >= gameHeight) {
+            this.y = gameHeight - this.radius;
+            playerDown("CRASHED!");
+          }
+          if (this.y - this.radius <= 0) {
+            this.y = this.radius;
+            this.velocity = 0;
+          }
+        },
+
+        flap() {
+          this.velocity = flapStrength;
+          playSound("flap");
+          createParticles(this.x, this.y, 8, currentFlavor);
+        },
+      };
+
+      const pipes = {
+        items: [],
+
+        draw() {
+          for (let i = 0; i < this.items.length; i++) {
+            let p = this.items[i];
+            const flavor = FLAVORS[p.type];
+
+            const displayWidth = pipeWidth * 2.6;
+
+            let masterAspect = 0.33;
+            if (bottomPipeImg.complete && bottomPipeImg.height > 0) {
+              masterAspect = bottomPipeImg.width / bottomPipeImg.height;
+            } else if (topPipeImg.complete && topPipeImg.height > 0) {
+              masterAspect = topPipeImg.width / topPipeImg.height;
+            }
+            const displayHeight = displayWidth / masterAspect;
+
+            if (topPipeImg.complete && topPipeImg.width > 0) {
+              ctx.save();
+              ctx.globalCompositeOperation = "source-over";
+              ctx.translate(p.x + pipeWidth / 2, p.top);
+              ctx.drawImage(
+                topPipeImg,
+                -displayWidth / 2,
+                -displayHeight,
+                displayWidth,
+                displayHeight
+              );
+              if (p.top > displayHeight) {
+                ctx.fillStyle = "#050a05";
+                ctx.fillRect(
+                  -pipeWidth / 2,
+                  -p.top,
+                  pipeWidth,
+                  p.top - displayHeight + 2
+                );
+              }
+              ctx.restore();
+            }
+
+            if (bottomPipeImg.complete && bottomPipeImg.width > 0) {
+              ctx.save();
+              ctx.globalCompositeOperation = "source-over";
+              ctx.translate(p.x + pipeWidth / 2, gameHeight - p.bottom);
+              ctx.drawImage(
+                bottomPipeImg,
+                -displayWidth / 2,
+                0,
+                displayWidth,
+                displayHeight
+              );
+              if (p.bottom > displayHeight) {
+                ctx.fillStyle = "#050a05";
+                ctx.fillRect(
+                  -pipeWidth / 2,
+                  displayHeight - 2,
+                  pipeWidth,
+                  p.bottom - displayHeight + 5
+                );
+              }
+              ctx.restore();
+            }
+
+            if (
+              (!topPipeImg.complete || topPipeImg.width === 0) &&
+              (!bottomPipeImg.complete || bottomPipeImg.width === 0)
+            ) {
+              const grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
+              grad.addColorStop(0, "#111");
+              grad.addColorStop(0.5, "#444");
+              grad.addColorStop(1, "#111");
+              ctx.fillStyle = grad;
+              ctx.strokeStyle = flavor.color;
+              ctx.lineWidth = 2;
+              ctx.fillRect(p.x, 0, pipeWidth, p.top);
+              ctx.strokeRect(p.x, 0, pipeWidth, p.top);
+              ctx.fillRect(p.x, gameHeight - p.bottom, pipeWidth, p.bottom);
+              ctx.strokeRect(p.x, gameHeight - p.bottom, pipeWidth, p.bottom);
+            }
+
+            if (!p.passedBarrier) {
+              const pulse = Math.sin(frames * 0.1) * 0.5 + 0.5;
+              const gapHeight = gameHeight - p.top - p.bottom;
+
+              ctx.save();
+              ctx.shadowBlur = 6;
+              ctx.shadowColor = "#000000";
+
+              const baseLs = 48;
+              const ls = baseLs + pulse * 8;
+              const floatY = Math.sin(frames * 0.05) * 6;
+
+              ctx.translate(
+                p.x + pipeWidth / 2,
+                p.top + gapHeight / 2 + floatY
+              );
+
+              const grid = PIXEL_LETTERS[p.type];
+              const rows = grid.length;
+              const cols = grid[0].length;
+
+              const pixelSize = ls / Math.max(rows, cols);
+
+              const startX = -(cols * pixelSize) / 2;
+              const startY = -(rows * pixelSize) / 2;
+
+              ctx.fillStyle = flavor.color;
+
+              for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                  if (grid[r][c] === 1) {
+                    ctx.fillRect(
+                      startX + c * pixelSize,
+                      startY + r * pixelSize,
+                      pixelSize + 0.5,
+                      pixelSize + 0.5
+                    );
+                  }
+                }
+              }
+              ctx.restore();
+            }
+          }
+        },
+
+        update() {
+          const elapsed = matchElapsed();
+          while (elapsed >= nextSpawnElapsed) {
+            // Evaluate difficulty at the pipe's SCHEDULED time, not the
+            // current frame, so pipe geometry and the spawn schedule are a
+            // pure function of the shared match clock — bit-identical on
+            // both laptops regardless of local frame timing.
+            const schedProgress =
+              Math.min(1, Math.max(0, nextSpawnElapsed) / RAMP_MS);
+            const schedDifficulty = Math.pow(schedProgress, 1.5);
+            const schedGap = 160 - 80 * schedDifficulty;
+            const schedSpeed = 1.5 + 6.0 * schedDifficulty;
+            const schedRate = 180 - 145 * schedDifficulty;
+
+            // Seeded rng -> both laptops spawn identical heights & flavors
+            let topHeight = rng() * (gameHeight - schedGap - 100) + 50;
+            let bottomHeight = gameHeight - schedGap - topHeight;
+            let type = flavorKeys[Math.floor(rng() * flavorKeys.length)];
+
+            // Anchor the pipe to the scroll distance at its SCHEDULED time
+            // so a lagged frame doesn't stack late spawns on top of each other.
+            const lateBy = elapsed - nextSpawnElapsed;
+            this.items.push({
+              spawnScroll: scrollDist - (schedSpeed * lateBy) / 16.666,
+              x: PIPE_SPAWN_X,
+              top: topHeight,
+              bottom: bottomHeight,
+              type: type,
+              passedBarrier: false,
+            });
+            nextSpawnElapsed += schedRate * 16.666;
+          }
+
+          for (let i = 0; i < this.items.length; i++) {
+            let p = this.items[i];
+            p.x = PIPE_SPAWN_X - (scrollDist - p.spawnScroll);
+
+            if (
+              bird.x + bird.radius > p.x &&
+              bird.x - bird.radius < p.x + pipeWidth
+            ) {
+              if (
+                bird.y - bird.radius < p.top ||
+                bird.y + bird.radius > gameHeight - p.bottom
+              ) {
+                playerDown("CRASHED!");
+              }
+
+              if (bird.x > p.x + pipeWidth / 2 - 10 && !p.passedBarrier) {
+                if (currentFlavor !== p.type) {
+                  playerDown("WRONG FLAVOR!");
+                } else {
+                  p.passedBarrier = true;
+                  score++;
+                  scoreDisplay.innerText = score;
+                  playSound("score");
+                  createParticles(bird.x, bird.y, 15, currentFlavor);
+                  syncNow();
+                }
+              }
+            }
+
+            if (p.x + pipeWidth < 0) {
+              this.items.shift();
+              i--;
+            }
+          }
+        },
+
+        reset() {
+          this.items = [];
+        },
+      };
+
+      let particles = [];
+      function createParticles(x, y, count, flavorKey) {
+        const flavorColor = FLAVORS[flavorKey]
+          ? FLAVORS[flavorKey].color
+          : "#ffffff";
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            life: 1,
+            decay: Math.random() * 0.05 + 0.02,
+            color: flavorColor,
+          });
+        }
+      }
+
+      function drawAndUpdateParticles(deltaMultiplier) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          let p = particles[i];
+          p.x += p.vx * deltaMultiplier;
+          p.y += p.vy * deltaMultiplier;
+          p.life -= p.decay * deltaMultiplier;
+
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function drawBackground() {
+        if (bgImg.complete && bgImg.width > 0) {
+          const bgWidth = gameHeight * (bgImg.width / bgImg.height);
+          const bgScroll = (frames * 0.5) % bgWidth;
+          ctx.drawImage(bgImg, -bgScroll, 0, bgWidth, gameHeight);
+          ctx.drawImage(bgImg, bgWidth - bgScroll, 0, bgWidth, gameHeight);
+
+          if (bgWidth * 2 - bgScroll < gameWidth) {
+            ctx.drawImage(
+              bgImg,
+              bgWidth * 2 - bgScroll,
+              0,
+              bgWidth,
+              gameHeight
+            );
+          }
+
+          ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.fillRect(0, 0, gameWidth, gameHeight);
+        } else {
+          ctx.fillStyle = "#050a05";
+          ctx.fillRect(0, 0, gameWidth, gameHeight);
+          ctx.strokeStyle = "#112200";
+          ctx.lineWidth = 1;
+          const scrollOffset = (frames * 0.5) % 40;
+
+          for (let i = 0; i < gameHeight; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(gameWidth, i);
+            ctx.stroke();
+          }
+
+          for (let i = -40; i < gameWidth; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(i - scrollOffset, 0);
+            ctx.lineTo(i - scrollOffset, gameHeight);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // ---------- MAIN LOOP ----------
+      function loop(timestamp) {
+        if (!timestamp) timestamp = performance.now();
+        if (!lastTime) lastTime = timestamp;
+        let deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+
+        if (deltaTime > 100) deltaTime = 100;
+        let deltaMultiplier = deltaTime / 16.666;
+
+        ctx.clearRect(0, 0, gameWidth, gameHeight);
+        drawBackground();
+
+        if (currentState === "PLAYING") {
+          let elapsedTime = matchElapsed();
+
+          let totalSeconds = Math.max(0, Math.floor(elapsedTime / 1000));
+          let mins = Math.floor(totalSeconds / 60);
+          let secs = totalSeconds % 60;
+          timerDisplay.innerText = `${mins}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+
+          // Sudden death ramp: max brutality at 1:00, then hold.
+          let progress = Math.min(1, Math.max(0, elapsedTime) / RAMP_MS);
+          let difficultyMultiplier = Math.pow(progress, 1.5);
+
+          pipeSpeed = 1.5 + 6.0 * difficultyMultiplier;
+          pipeGap = 160 - 80 * difficultyMultiplier;
+          pipeSpawnRate = 180 - 145 * difficultyMultiplier;
+
+          // Advance the shared-clock scroll integral (drives pipe positions)
+          const scrollDelta = Math.max(0, elapsedTime - lastScrollElapsed);
+          lastScrollElapsed = elapsedTime;
+          scrollDist += (pipeSpeed * scrollDelta) / 16.666;
+          frames = elapsedTime / 16.666;
+
+          pipes.update();
+          bird.update(deltaMultiplier);
+          updateNextFlavorUI();
+          if (oppDeath) evaluateOutcome();
+        } else if (currentState === "COUNTDOWN") {
+          bird.y = gameHeight / 2 + Math.sin(Date.now() / 200) * 10;
+          bird.rotation = 0;
+        }
+        // DOWN state: scene freezes (no updates), particles still fade out.
+
+        pipes.draw();
+        drawAndUpdateParticles(deltaMultiplier);
+        bird.draw();
+
+        if (currentState !== "RESULT" && currentState !== "LOBBY") {
+          animationId = requestAnimationFrame(loop);
+        }
+      }
+
+      function updateUIState() {
+        Object.keys(touchBtns).forEach((k) =>
+          touchBtns[k].classList.remove("active")
+        );
+        if (touchBtns[currentFlavor])
+          touchBtns[currentFlavor].classList.add("active");
+      }
+
+      function updateNextFlavorUI() {
+        let nextPipe = pipes.items.find((p) => !p.passedBarrier);
+
+        if (nextPipe) {
+          const flavor = FLAVORS[nextPipe.type];
+          if (flavorDisplay.innerText !== flavor.name) {
+            flavorDisplay.innerText = flavor.name;
+            flavorDisplay.style.color = flavor.color;
+            flavorDisplay.style.textShadow = `0 0 10px ${flavor.color}`;
+          }
+        } else {
+          if (flavorDisplay.innerText !== "INCOMING...") {
+            flavorDisplay.innerText = "INCOMING...";
+            flavorDisplay.style.color = "#88ff00";
+            flavorDisplay.style.textShadow = `0 0 10px #88ff00`;
+          }
+        }
+      }
+
+      function updateOppStrip() {
+        oppScoreEl.innerText = oppScore;
+        if (oppAlive) {
+          oppStatusEl.innerText = "ALIVE";
+          oppStatusEl.className = "text-[#88ff00]";
+        } else {
+          oppStatusEl.innerText = "CRASHED";
+          oppStatusEl.className = "text-red-400";
+        }
+      }
+
+      function updateLobbyUI() {
+        const readyMap = { 1: null, 2: null };
+        readyMap[me] = myReady;
+        readyMap[opp] = oppReady;
+
+        [chip1, chip2].forEach((chip, idx) => {
+          const p = idx + 1;
+          const stateSpan = chip.querySelector(".chip-state");
+          if (readyMap[p]) {
+            chip.classList.add("is-ready");
+            stateSpan.innerText = "READY ✓";
+          } else {
+            chip.classList.remove("is-ready");
+            stateSpan.innerText = "WAITING";
+          }
+        });
+
+        const online = Date.now() - lastGoodSyncAt < 5000;
+        const oppOnline = Date.now() - lastOppSeenWall < 8000;
+
+        // Deployed server without KV configured: each serverless instance
+        // has its own memory, so the laptops would never see each other.
+        if (online && lastMemFlag && location.protocol === "https:") {
+          connStatus.innerText =
+            "SERVER STORAGE NOT CONFIGURED — SET KV ENV VARS";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
+          return;
+        }
+
+        if (!online) {
+          connStatus.innerText = "CONNECTING TO SERVER...";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-yellow-400";
+        } else if (!oppOnline) {
+          connStatus.innerText = "SEARCHING FOR OTHER SCREEN...";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-yellow-400";
+        } else {
+          connStatus.innerText = "BOTH SCREENS CONNECTED ✓";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-[#88ff00]";
+        }
+      }
+
+      // ---------- GAME LIFECYCLE ----------
+      function init(seed) {
+        resizeCanvas();
+        rng = mulberry32(seed);
+        bird.y = gameHeight / 2;
+        bird.velocity = 0;
+        bird.rotation = 0;
+        pipes.reset();
+        particles = [];
+        score = 0;
+        frames = 0;
+        lastTime = 0;
+        currentFlavor = "D";
+        oppScore = 0;
+        oppAlive = true;
+        oppAliveAt = null;
+        myDeath = null;
+        myDeathWall = 0;
+        oppDeath = null;
+        adjudicated = false;
+        scoreDisplay.innerText = score;
+        timerDisplay.innerText = "0:00";
+
+        pipeGap = 160;
+        pipeSpeed = 1.5;
+        pipeSpawnRate = 180;
+        scrollDist = 0;
+        lastScrollElapsed = 0;
+        nextSpawnElapsed = 3000;
+        oppOutOfMatchSince = 0;
+
+        updateUIState();
+        updateNextFlavorUI();
+        updateOppStrip();
+
+        ctx.clearRect(0, 0, gameWidth, gameHeight);
+        drawBackground();
+        bird.draw();
+      }
+
+      function toLobby(reason) {
+        window.__trace = window.__trace || [];
+        window.__trace.push({ reason: reason || "?", at: Date.now(), state: currentState });
+        if (returnTimer) {
+          clearTimeout(returnTimer);
+          returnTimer = null;
+        }
+        if (countdownTicker) {
+          clearInterval(countdownTicker);
+          countdownTicker = null;
+        }
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+
+        if (currentMatchId) handledMatchId = currentMatchId;
+        currentMatchId = null;
+        currentState = "LOBBY";
+        myReady = false;
+        oppReady = false;
+
+        loseScreen.classList.add("hidden");
+        winScreen.classList.add("hidden");
+        drawScreen.classList.add("hidden");
+        countdownDisplay.classList.add("hidden");
+        hud.classList.add("hidden");
+        oppStrip.classList.add("hidden");
+        lobbyScreen.classList.remove("hidden");
+
+        init(1);
+        updateLobbyUI();
+
+        if (me === 1 && handledMatchId) clearMatch(handledMatchId);
+        syncNow();
+      }
+
+      function beginCountdown(match) {
+        if (currentState !== "LOBBY") return;
+        initAudio();
+
+        handledMatchId = match.id;
+        currentMatchId = match.id;
+        matchStartServer = match.startAt;
+        matchStartLocal = matchStartServer - clockOffset;
+        window.__matchSeed = match.seed; // debugging: must match on both laptops
+
+        init(match.seed);
+        currentState = "COUNTDOWN";
+        lobbyScreen.classList.add("hidden");
+        hud.classList.remove("hidden");
+        oppStrip.classList.remove("hidden");
+        countdownDisplay.classList.remove("hidden");
+
+        if (animationId) cancelAnimationFrame(animationId);
+        loop(performance.now());
+
+        let lastShown = null;
+        countdownTicker = setInterval(() => {
+          // Refine start alignment as clockOffset improves during countdown
+          matchStartLocal = matchStartServer - clockOffset;
+          const remaining = matchStartLocal - Date.now();
+          if (remaining <= 0) {
+            clearInterval(countdownTicker);
+            countdownTicker = null;
+            countdownDisplay.classList.add("hidden");
+            currentState = "PLAYING";
+            gameStartTime = matchStartLocal;
+            bird.flap();
+            schedulePoll();
+            return;
+          }
+          const num = Math.min(3, Math.max(1, Math.ceil(remaining / 1000)));
+          if (num !== lastShown) {
+            lastShown = num;
+            countdownDisplay.innerText = num;
+            countdownDisplay.style.transform = "scale(1.5)";
+            setTimeout(
+              () => (countdownDisplay.style.transform = "scale(1)"),
+              100
+            );
+          }
+        }, 50);
+
+        schedulePoll();
+      }
+
+      function playerDown(reason) {
+        if (currentState !== "PLAYING") return;
+
+        currentState = "DOWN";
+        playSound(reason === "WRONG FLAVOR!" ? "wrong" : "crash");
+        myDeath = {
+          t: matchElapsed(),
+          reason: reason,
+          score: score,
+        };
+        myDeathWall = Date.now();
+
+        canvas.style.transform = "translate(5px, 5px)";
+        setTimeout(
+          () => (canvas.style.transform = "translate(-5px, -5px)"),
+          50
+        );
+        setTimeout(
+          () => (canvas.style.transform = "translate(5px, -5px)"),
+          100
+        );
+        setTimeout(() => (canvas.style.transform = "translate(0, 0)"), 150);
+
+        syncNow();
+      }
+
+      function evaluateOutcome() {
+        if (adjudicated) return;
+
+        if (currentState === "PLAYING") {
+          // Opponent died and we outlived the double-KO window -> we win
+          if (oppDeath && matchElapsed() > oppDeath.t + KO_WINDOW_MS) {
+            finishMatch("WIN");
+          }
+          return;
+        }
+
+        if (currentState !== "DOWN") return;
+
+        if (oppDeath) {
+          const delta = Math.abs(myDeath.t - oppDeath.t);
+          if (delta <= KO_WINDOW_MS) {
+            finishMatch("DRAW");
+          } else {
+            finishMatch(myDeath.t > oppDeath.t ? "WIN" : "LOSE");
+          }
+          return;
+        }
+
+        // Opponent reported being alive after our death window closed -> we lost
+        if (oppAliveAt !== null && oppAliveAt > myDeath.t + KO_WINDOW_MS) {
+          finishMatch("LOSE");
+          return;
+        }
+
+        // No evidence about the opponent at all for a long time: void the
+        // match instead of inventing a loser.
+        if (Date.now() - myDeathWall > 8000) {
+          toLobby("no-verdict");
+          connStatus.innerText = "MATCH VOIDED — NO SIGNAL FROM OTHER SCREEN";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
+        }
+      }
+
+      function finishMatch(verdict) {
+        adjudicated = true;
+        window.__lastVerdict = verdict; // debugging
+        currentState = "RESULT";
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        hud.classList.add("hidden");
+        oppStrip.classList.add("hidden");
+
+        if (verdict === "DRAW") {
+          drawScore.innerText = score;
+          drawScreen.classList.remove("hidden");
+          returnTimer = setTimeout(() => toLobby("draw-3s"), 3000);
+        } else if (verdict === "WIN") {
+          playSound("score");
+          winnerLabel.innerText = `PLAYER ${me} WINS!`;
+          winScore.innerText = score;
+          winScreen.classList.remove("hidden");
+          scheduleReturn(winCountdown);
+        } else {
+          loseReason.innerText = myDeath ? myDeath.reason : "CRASHED!";
+          loseScore.innerText = score;
+          loseScreen.classList.remove("hidden");
+          scheduleReturn(loseCountdown);
+        }
+
+        syncNow();
+      }
+
+      function scheduleReturn(countdownEl) {
+        let secondsLeft = 8;
+        countdownEl.innerText = `Next match in ${secondsLeft}...`;
+        const tick = setInterval(() => {
+          secondsLeft--;
+          if (secondsLeft > 0) {
+            countdownEl.innerText = `Next match in ${secondsLeft}...`;
+          } else {
+            clearInterval(tick);
+          }
+        }, 1000);
+        returnTimer = setTimeout(() => {
+          clearInterval(tick);
+          toLobby("return-8s");
+        }, 8000);
+      }
+
+      // ---------- WATCHDOG ----------
+      setInterval(() => {
+        if (me === null) return;
+
+        if (currentState === "LOBBY") {
+          updateLobbyUI();
+          return;
+        }
+
+        // Sustained loss of server connection mid-match
+        if (lastGoodSyncAt && Date.now() - lastGoodSyncAt > 12000) {
+          toLobby("conn-lost");
+          connStatus.innerText = "CONNECTION LOST — RECONNECTING...";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
+          return;
+        }
+
+        // Opponent's laptop stopped reporting mid-match
+        if (
+          currentState !== "RESULT" &&
+          lastOppSeenWall &&
+          Date.now() - lastOppSeenWall > 12000
+        ) {
+          toLobby("opp-lost");
+          connStatus.innerText = "OTHER SCREEN LOST — MATCH RESET";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
+          return;
+        }
+
+        // Opponent abandoned the match (reloaded to lobby) but keeps polling
+        if (
+          (currentState === "PLAYING" || currentState === "DOWN") &&
+          oppOutOfMatchSince &&
+          Date.now() - oppOutOfMatchSince > 5000
+        ) {
+          toLobby("opp-left-match");
+          connStatus.innerText = "OTHER SCREEN LEFT THE MATCH — RESET";
+          connStatus.className =
+            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
+        }
+      }, 1500);
+
+      // ---------- INPUT ----------
+      function applyLocalInput(flavor) {
+        if (currentState === "LOBBY") {
+          if (!myReady) {
+            myReady = true;
+            updateLobbyUI();
+            syncNow();
+          }
+        } else if (currentState === "COUNTDOWN") {
+          currentFlavor = flavor;
+          updateUIState();
+        } else if (currentState === "PLAYING") {
+          currentFlavor = flavor;
+          updateUIState();
+          bird.flap();
+        }
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (me === null || e.repeat) return;
+        initAudio();
+
+        const key = e.key.toUpperCase();
+
+        // Operator escape hatch: R resets BOTH laptops to the lobby
+        if (key === "R") {
+          lastResetReq = Math.floor(serverNowEst());
+          toLobby("reset-key");
+          return;
+        }
+
+        if (flavorKeys.includes(key)) {
+          applyLocalInput(key);
+        }
+      });
+
+      // ---------- IDENTITY BOOTSTRAP ----------
+      function setPlayer(p) {
+        me = p;
+        opp = p === 1 ? 2 : 1;
+
+        document.title = `Do The Dew — PVP (Player ${me})`;
+        playerBadge.innerText = `PLAYER ${me}`;
+        roomLabel.innerText = `ROOM: ${room.toUpperCase()} · YOUR KEYS: D E W`;
+        oppLabel.innerText = `PLAYER ${opp}`;
+
+        pickerScreen.classList.add("hidden");
+        lobbyScreen.classList.remove("hidden");
+        currentState = "LOBBY";
+        init(1);
+        updateLobbyUI();
+        syncNow();
+      }
+
+      const urlP = urlParams.get("p");
+      if (urlP === "1" || urlP === "2") {
+        setPlayer(parseInt(urlP, 10));
+      } else {
+        pickerScreen.classList.remove("hidden");
+        lobbyScreen.classList.add("hidden");
+        document
+          .getElementById("pick1")
+          .addEventListener("click", () => setPlayer(1));
+        document
+          .getElementById("pick2")
+          .addEventListener("click", () => setPlayer(2));
+      }
+    </script>
+  </body>
+</html>
