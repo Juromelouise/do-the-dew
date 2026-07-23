@@ -368,27 +368,15 @@
 
     <script>
       // =========================================================================
-      // ⬇️ ADD OR CHANGE YOUR WHEEL ITEMS HERE ⬇️
-      // Top 3 items will automatically stand out in bright neon green!
+      // The wheel builds its slices automatically from live inventory
+      // (managed on /admin.html). Every in-stock item gets a slice; items at
+      // 0 stock disappear. PRIZE_PRIORITY items stand out in bright neon.
       // =========================================================================
 
-      const PRODUCT_LABELS = [
-        "G102 mouse (white)",
-        "G102 mouse (black)",
-        "G335 (white)",
-        "Mountain Dew Keychain",
-      ];
       const PRIZE_PRIORITY = [
         "Mountain Dew Keychain",
         "Mountain Dew Shirt",
         "G102 mouse (white)",
-      ];
-      const LOSS_LABEL_POOL = [
-        "Try Again",
-        "Better Luck Next Time",
-        "Try Again",
-        "Better Luck Next Time",
-        "Try Again",
       ];
 
       function shuffleArray(items) {
@@ -400,9 +388,16 @@
         return arr;
       }
 
-      function buildWheelItems() {
-        const products = shuffleArray(PRODUCT_LABELS);
-        const losses = shuffleArray(LOSS_LABEL_POOL);
+      function buildWheelItems(productNames) {
+        const products = shuffleArray(productNames);
+        // Loss slices scale with the item count so the wheel stays balanced,
+        // and always include both loss labels.
+        const lossCount = Math.max(3, Math.min(6, products.length + 1));
+        const losses = [];
+        for (let i = 0; i < lossCount; i++) {
+          losses.push(LOSS_LABELS[i % LOSS_LABELS.length]);
+        }
+
         const totalSlices = products.length + losses.length;
         const wheel = new Array(totalSlices);
 
@@ -425,10 +420,44 @@
         return wheel;
       }
 
-      const wheelItems = buildWheelItems();
+      let wheelItems = [];
+      let lastWheelSignature = null;
+
+      function getActiveProductNames() {
+        return Object.keys(prizeInventory).filter(
+          (name) => (prizeInventory[name] || 0) > 0
+        );
+      }
+
+      function getWheelSignature(productNames) {
+        return [...productNames].sort().join("|");
+      }
+
+      function rebuildWheel(extraNames = []) {
+        const names = getActiveProductNames();
+        for (const extra of extraNames) {
+          if (extra && !names.includes(extra)) {
+            names.push(extra);
+          }
+        }
+        wheelItems = buildWheelItems(names);
+        lastWheelSignature = getWheelSignature(names);
+        drawWheel();
+      }
+
+      function rebuildWheelIfChanged() {
+        if (isSpinning) {
+          return;
+        }
+
+        if (getWheelSignature(getActiveProductNames()) !== lastWheelSignature) {
+          rebuildWheel();
+        }
+      }
 
       const PRIZE_INVENTORY_STORAGE_KEY = "dew-wheel-prize-inventory-v4";
       const CHANCE_MULTIPLIERS_STORAGE_KEY = "dew-wheel-chance-multipliers-v14";
+      const SETTINGS_STORAGE_KEY = "dew-wheel-settings-v1";
       const WHEEL_CONFIG_API_URL = "/api/wheel-config";
       const WHEEL_SPIN_API_URL = "/api/spin";
       const INVENTORY_EXPORT_API_URL = "/api/export-inventory";
@@ -482,16 +511,22 @@
           }
 
           const parsed = JSON.parse(saved);
-          const merged = { ...DEFAULT_PRIZE_INVENTORY };
+          if (!parsed || typeof parsed !== "object") {
+            return { ...DEFAULT_PRIZE_INVENTORY };
+          }
 
-          for (const key of Object.keys(DEFAULT_PRIZE_INVENTORY)) {
-            const raw = parsed?.[key];
+          // Item names are dynamic (managed on /admin.html), so accept every
+          // stored key rather than only the built-in defaults.
+          const merged = {};
+          for (const [key, raw] of Object.entries(parsed)) {
             if (Number.isFinite(raw)) {
               merged[key] = Math.max(0, Math.floor(raw));
             }
           }
 
-          return merged;
+          return Object.keys(merged).length
+            ? merged
+            : { ...DEFAULT_PRIZE_INVENTORY };
         } catch {
           return { ...DEFAULT_PRIZE_INVENTORY };
         }
@@ -530,27 +565,26 @@
           }
 
           const parsed = JSON.parse(saved);
-          const merged = { ...DEFAULT_CHANCE_MULTIPLIERS };
+          if (!parsed || typeof parsed !== "object") {
+            return { ...DEFAULT_CHANCE_MULTIPLIERS };
+          }
 
-          for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
-            const raw = parsed?.[key];
+          const merged = {};
+          for (const [key, raw] of Object.entries(parsed)) {
             if (Number.isFinite(raw) && raw >= 0) {
               merged[key] = Number(raw);
             }
           }
 
-          return merged;
+          return Object.keys(merged).length
+            ? merged
+            : { ...DEFAULT_CHANCE_MULTIPLIERS };
         } catch {
           return { ...DEFAULT_CHANCE_MULTIPLIERS };
         }
       }
 
-      function saveChanceMultipliers(
-        multipliers = CHANCE_MULTIPLIERS,
-        options = {}
-      ) {
-        const { skipRemoteSync = false } = options;
-
+      function saveChanceMultipliers(multipliers = CHANCE_MULTIPLIERS) {
         try {
           const storage = getBrowserStorage();
           if (!storage) {
@@ -563,28 +597,45 @@
         } catch {
           // Ignore storage errors so gameplay still works.
         }
+      }
 
-        if (isRemoteStateActive && !skipRemoteSync) {
-          pushServerConfig({ multipliers }).catch(() => {
-            // Ignore remote sync errors and keep local values.
-          });
+      function loadServerSettings() {
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return null;
+          }
+          const saved = storage.getItem(SETTINGS_STORAGE_KEY);
+          const parsed = saved ? JSON.parse(saved) : null;
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveServerSettings(settings) {
+        try {
+          const storage = getBrowserStorage();
+          if (!storage) {
+            return;
+          }
+          storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        } catch {
+          // Ignore storage errors so gameplay still works.
         }
       }
 
       const prizeInventory = loadPrizeInventory();
 
       // =====================================================================
-      // CHANCE TWEAK SECTION (EDIT THESE DURING PEAK HOURS)
-      // Higher multiplier = higher chance among available products.
-      // Priority requested: G335 > G333 > G102 > Shirt > Keychain.
-      // Example for peak hours:
-      // - reduce Shirt/Keychain multipliers to slow regular prize outflow
-      // - slightly increase G335/G333/G102 if you want rare hype moments
+      // Live chances/stock are managed on /admin.html (server-side).
+      // The values below are only the offline fallback for when the API is
+      // unreachable. Higher multiplier = higher chance among in-stock items.
       // =====================================================================
       const CHANCE_MULTIPLIERS = loadChanceMultipliers();
 
       function setChanceMultiplier(itemName, value) {
-        if (!(itemName in DEFAULT_CHANCE_MULTIPLIERS)) {
+        if (!(itemName in CHANCE_MULTIPLIERS)) {
           return false;
         }
 
@@ -621,18 +672,33 @@
           return;
         }
 
-        for (const key of Object.keys(DEFAULT_PRIZE_INVENTORY)) {
-          const raw = state.inventory?.[key];
-          if (Number.isFinite(raw)) {
-            prizeInventory[key] = Math.max(0, Math.floor(raw));
+        // The server owns the item list: mirror it exactly so items added or
+        // removed on /admin.html appear/disappear here too.
+        if (state.inventory && typeof state.inventory === "object") {
+          for (const key of Object.keys(prizeInventory)) {
+            delete prizeInventory[key];
+          }
+          for (const [key, raw] of Object.entries(state.inventory)) {
+            if (Number.isFinite(raw)) {
+              prizeInventory[key] = Math.max(0, Math.floor(raw));
+            }
           }
         }
 
-        for (const key of Object.keys(DEFAULT_CHANCE_MULTIPLIERS)) {
-          const raw = state.multipliers?.[key];
-          if (Number.isFinite(raw) && raw >= 0) {
-            CHANCE_MULTIPLIERS[key] = Number(raw);
+        if (state.multipliers && typeof state.multipliers === "object") {
+          for (const key of Object.keys(CHANCE_MULTIPLIERS)) {
+            delete CHANCE_MULTIPLIERS[key];
           }
+          for (const [key, raw] of Object.entries(state.multipliers)) {
+            if (Number.isFinite(raw) && raw >= 0) {
+              CHANCE_MULTIPLIERS[key] = Number(raw);
+            }
+          }
+        }
+
+        if (state.settings && typeof state.settings === "object") {
+          serverSettings = { ...state.settings };
+          saveServerSettings(serverSettings);
         }
 
         if (Number.isFinite(state.nextMouseDueAt)) {
@@ -640,7 +706,7 @@
         }
 
         savePrizeInventory(prizeInventory);
-        saveChanceMultipliers(CHANCE_MULTIPLIERS, { skipRemoteSync: true });
+        saveChanceMultipliers(CHANCE_MULTIPLIERS);
       }
 
       async function fetchServerState() {
@@ -659,35 +725,6 @@
             return null;
           }
 
-          isRemoteStateActive = true;
-          applyStateFromServer(payload.state);
-          return payload.state;
-        } catch {
-          return null;
-        }
-      }
-
-      async function pushServerConfig(updatePayload = {}) {
-        try {
-          const response = await fetch(WHEEL_CONFIG_API_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify(updatePayload),
-          });
-
-          if (!response.ok) {
-            return null;
-          }
-
-          const payload = await response.json();
-          if (!payload?.ok || !payload?.state) {
-            return null;
-          }
-
-          isRemoteStateActive = true;
           applyStateFromServer(payload.state);
           return payload.state;
         } catch {
@@ -715,7 +752,6 @@
             return null;
           }
 
-          isRemoteStateActive = true;
           applyStateFromServer(payload.state);
           return payload;
         } catch {
@@ -756,12 +792,12 @@
       let currentRotation = 0;
       let isSpinning = false;
       let pendingWinnerItem = null;
-      let isRemoteStateActive = false;
+      let serverSettings = loadServerSettings();
 
       const EVENT_START_HOUR = 10;
       const EVENT_END_HOUR = 22;
       const ENFORCE_EVENT_WINDOW = false;
-      const MOUSE_PRIZE_KEYS = ["G102 mouse (black)", "G102 mouse (white)"];
+      const MOUSE_NAME_PATTERN = /mouse/i;
       const MOUSE_INTERVAL_MIN_MS = 135 * 60 * 1000;
       const MOUSE_INTERVAL_MAX_MS = 240 * 60 * 1000;
       const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
@@ -783,7 +819,28 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
       }
 
+      function getMouseKeys() {
+        return Object.keys(prizeInventory).filter((name) =>
+          MOUSE_NAME_PATTERN.test(name)
+        );
+      }
+
+      function isMouseTimerEnabled() {
+        return serverSettings ? Boolean(serverSettings.mouseTimerEnabled) : true;
+      }
+
       function randomMouseIntervalMs() {
+        if (
+          serverSettings &&
+          Number.isFinite(serverSettings.mouseIntervalMinMinutes) &&
+          Number.isFinite(serverSettings.mouseIntervalMaxMinutes)
+        ) {
+          return randomInt(
+            serverSettings.mouseIntervalMinMinutes * 60 * 1000,
+            serverSettings.mouseIntervalMaxMinutes * 60 * 1000
+          );
+        }
+
         return randomInt(MOUSE_INTERVAL_MIN_MS, MOUSE_INTERVAL_MAX_MS);
       }
 
@@ -941,6 +998,12 @@
           return false;
         }
 
+        // The admin-set master win rate takes priority; the estimate below is
+        // only a fallback for when no server settings were ever synced.
+        if (serverSettings && Number.isFinite(serverSettings.masterWinRate)) {
+          return Math.random() * 100 < serverSettings.masterWinRate;
+        }
+
         const remainingEventMs = getRemainingEventMs(nowMs);
         if (remainingEventMs <= 0) {
           return false;
@@ -987,16 +1050,18 @@
       function pickPrizeForSpinLocal() {
         const nowMs = Date.now();
         const inEventWindow = isPrizeWindowOpen(nowMs);
-        const mouseAvailable = getInventoryCountForKeys(MOUSE_PRIZE_KEYS) > 0;
+        const mouseKeys = getMouseKeys();
+        const mouseAvailable = getInventoryCountForKeys(mouseKeys) > 0;
+        const mouseTimerActive = isMouseTimerEnabled() && mouseAvailable;
         const shouldForceMouse =
           inEventWindow &&
-          mouseAvailable &&
+          mouseTimerActive &&
           nextMouseDueAt !== null &&
           nowMs >= nextMouseDueAt;
 
         if (shouldForceMouse) {
           const forcedMouse = pickWeightedProduct({
-            includeOnlyKeys: MOUSE_PRIZE_KEYS,
+            includeOnlyKeys: mouseKeys,
           });
           if (!forcedMouse) {
             return pickLossLabel();
@@ -1017,7 +1082,7 @@
         }
 
         const weightedPick = pickWeightedProduct({
-          excludeKeys: inEventWindow && mouseAvailable ? MOUSE_PRIZE_KEYS : [],
+          excludeKeys: mouseTimerActive ? mouseKeys : [],
         });
         if (!weightedPick) {
           return pickLossLabel();
@@ -1236,6 +1301,16 @@
         const pickedPrize = await pickPrizeForSpin();
         pendingWinnerItem = pickedPrize;
 
+        // If the prize isn't drawn yet (item added on /admin.html after the
+        // last rebuild), rebuild the wheel with it included before spinning.
+        const normalizedPick = pickedPrize.toLowerCase();
+        const pickIsLoss =
+          normalizedPick.includes("try again") ||
+          normalizedPick.includes("better luck");
+        if (!pickIsLoss && !wheelItems.includes(pickedPrize)) {
+          rebuildWheel([pickedPrize]);
+        }
+
         const sliceAngle = 360 / wheelItems.length;
         const targetIndex = getRandomWheelIndexForItem(pickedPrize);
         const centerOfSlice = targetIndex * sliceAngle + sliceAngle / 2;
@@ -1321,12 +1396,15 @@
           setTimeout(() => {
             resultModal.classList.remove("modal-enter");
             winnerDisplay.innerHTML = `<span class="text-lime-500 font-bold drop-shadow-md">Ready for another spin!</span>`;
+            // Stock may have hit zero (or the admin changed items) — refresh
+            // the wheel slices between spins.
+            rebuildWheelIfChanged();
           }, 300);
         };
       });
 
-      // Expose quick controls for live operations from browser DevTools console.
-      // Example: dewWheelConfig.setChanceMultiplier("Headset", 0.05)
+      // DevTools console helpers (LOCAL fallback values only — live odds and
+      // inventory are managed on /admin.html, which writes to the server).
       window.dewWheelConfig = {
         getChanceMultipliers: () => ({ ...CHANCE_MULTIPLIERS }),
         setChanceMultiplier,
@@ -1348,8 +1426,19 @@
         }
 
         console.table(getProductChancePercentages());
-        drawWheel();
+        rebuildWheel();
         spinBtn.addEventListener("click", spinWheel);
+
+        // Keep the wheel synced with /admin.html while the tablet idles.
+        setInterval(async () => {
+          if (isSpinning) {
+            return;
+          }
+          const refreshed = await fetchServerState();
+          if (refreshed) {
+            rebuildWheelIfChanged();
+          }
+        }, 20000);
       })();
     </script>
   </body>

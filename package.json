@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "local": "node scripts/pvp-local-server.js",
     "pvp:local": "node scripts/pvp-local-server.js"
   },
   "dependencies": {

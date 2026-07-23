@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dew Admin Console</title>
+    <link rel="icon" type="image/x-icon" href="logo_mtdew.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --pixel-lime: #a3e635;
+        --pixel-lime-bright: #d9f99d;
+        --pixel-green-deep: #052e16;
+        --pixel-emerald: #064e3b;
+        --pixel-shadow: rgba(0, 0, 0, 0.75);
+      }
+
+      body {
+        font-family: "VT323", monospace;
+        letter-spacing: 0.03em;
+        background-color: rgb(0, 104, 51);
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(217, 249, 157, 0.04),
+          rgba(217, 249, 157, 0.04) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: soft-light;
+        opacity: 0.5;
+        z-index: 1;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+            rgba(163, 230, 53, 0.22) 1px,
+            transparent 1px
+          ),
+          radial-gradient(rgba(101, 163, 13, 0.18) 1px, transparent 1px);
+        background-size: 32px 32px, 48px 48px;
+        background-position: 0 0, 12px 12px;
+        opacity: 0.55;
+        z-index: 2;
+      }
+
+      .pixel-title {
+        font-family: "Press Start 2P", monospace;
+        text-shadow: 0 0 16px rgba(163, 230, 53, 0.9),
+          3px 3px 0 var(--pixel-shadow);
+        line-height: 1.2;
+      }
+
+      .pixel-text {
+        font-family: "VT323", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .pixel-btn {
+        font-family: "Press Start 2P", monospace;
+        border-radius: 0.6rem;
+        box-shadow: 0 0 0 3px rgba(217, 249, 157, 0.3),
+          0 10px 22px rgba(0, 0, 0, 0.55);
+        image-rendering: pixelated;
+      }
+
+      .pixel-panel {
+        border-radius: 0.8rem;
+        border-style: solid;
+        box-shadow: inset 0 0 0 2px rgba(217, 249, 157, 0.08),
+          0 0 45px rgba(132, 204, 22, 0.28);
+      }
+
+      .pixel-input {
+        font-family: "VT323", monospace;
+        letter-spacing: 0.06em;
+        background: rgba(2, 44, 34, 0.85);
+        border: 2px solid rgba(163, 230, 53, 0.45);
+        border-radius: 0.5rem;
+        color: #d9f99d;
+        outline: none;
+      }
+
+      .pixel-input:focus {
+        border-color: #a3e635;
+        box-shadow: 0 0 12px rgba(163, 230, 53, 0.45);
+      }
+
+      input[type="range"].dew-range {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 14px;
+        border-radius: 7px;
+        background: rgba(2, 44, 34, 0.9);
+        border: 2px solid rgba(163, 230, 53, 0.45);
+      }
+
+      input[type="range"].dew-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: linear-gradient(to bottom, #d9f99d, #a3e635);
+        border: 3px solid #052e16;
+        box-shadow: 0 0 12px rgba(163, 230, 53, 0.8);
+        cursor: pointer;
+      }
+
+      input[type="range"].dew-range::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: linear-gradient(to bottom, #d9f99d, #a3e635);
+        border: 3px solid #052e16;
+        box-shadow: 0 0 12px rgba(163, 230, 53, 0.8);
+        cursor: pointer;
+      }
+
+      .share-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(2, 44, 34, 0.9);
+        overflow: hidden;
+      }
+
+      .share-bar > div {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(to right, #84cc16, #d9f99d);
+        transition: width 0.25s ease;
+      }
+
+      .qty-btn {
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.7rem;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 0.45rem;
+        border: 2px solid rgba(163, 230, 53, 0.5);
+        background: rgba(2, 44, 34, 0.85);
+        color: #bef264;
+      }
+
+      .qty-btn:hover {
+        background: rgba(6, 78, 59, 0.95);
+      }
+
+      .qty-btn:active {
+        transform: translateY(2px);
+      }
+
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-10px); }
+        40%, 80% { transform: translateX(10px); }
+      }
+
+      .gate-shake {
+        animation: gateShake 0.4s ease;
+      }
+
+      .toast-show {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+      }
+    </style>
+  </head>
+  <body class="text-green-100 pb-40">
+    <!-- ===================== PASSCODE GATE ===================== -->
+    <div
+      id="gateOverlay"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-green-950/90 backdrop-blur-md px-4"
+    >
+      <div
+        id="gatePanel"
+        class="pixel-panel border-4 border-lime-500 bg-green-950 p-8 md:p-12 w-full max-w-md text-center relative z-10"
+      >
+        <div class="text-5xl mb-4">&#128274;</div>
+        <h1 class="pixel-title text-lime-300 text-xl md:text-2xl uppercase mb-2">
+          Dew Admin
+        </h1>
+        <p class="pixel-text text-green-300 text-lg mb-6">
+          Enter the admin passcode
+        </p>
+        <input
+          id="gateInput"
+          type="password"
+          autocomplete="off"
+          class="pixel-input w-full text-center text-3xl py-3 px-4 mb-4"
+          placeholder="PASSCODE"
+        />
+        <button
+          id="gateBtn"
+          class="pixel-btn w-full bg-gradient-to-b from-lime-300 to-lime-500 hover:from-lime-200 hover:to-lime-400 text-green-950 uppercase py-4 text-sm border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all"
+        >
+          UNLOCK
+        </button>
+        <p id="gateError" class="pixel-text text-red-400 text-lg mt-4 h-6"></p>
+      </div>
+    </div>
+
+    <!-- ===================== ADMIN CONSOLE ===================== -->
+    <main id="adminRoot" class="hidden relative z-10 max-w-5xl mx-auto px-4 pt-6">
+      <!-- Header -->
+      <header
+        class="pixel-panel border-2 border-lime-500/40 bg-green-950/70 backdrop-blur-sm px-5 py-4 md:px-8 md:py-5 mb-5"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 class="pixel-title text-lime-300 text-lg md:text-2xl uppercase">
+              Dew Admin Console
+            </h1>
+            <p class="pixel-text text-green-300 text-lg mt-2">
+              <span
+                id="syncDot"
+                class="inline-block w-3 h-3 rounded-full bg-lime-400 mr-1 align-middle"
+              ></span>
+              <span id="syncStatus">Loading&hellip;</span>
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a
+              href="./spin_the_wheel.html"
+              target="_blank"
+              class="pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.6rem] py-3 px-4 border-b-4 border-green-950 active:border-b-0 active:translate-y-[4px] transition-all inline-block"
+              >Open Wheel</a
+            >
+            <button
+              id="exportBtn"
+              class="pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.6rem] py-3 px-4 border-b-4 border-green-950 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              Export XLSX
+            </button>
+            <button
+              id="reloadBtn"
+              class="pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.6rem] py-3 px-4 border-b-4 border-green-950 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              Reload
+            </button>
+            <button
+              id="lockBtn"
+              class="pixel-btn bg-red-900/80 hover:bg-red-800/80 text-red-200 uppercase text-[0.6rem] py-3 px-4 border-b-4 border-red-950 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              Lock
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid md:grid-cols-2 gap-5 mb-5">
+        <!-- Master win rate -->
+        <section
+          class="pixel-panel border-2 border-lime-500/40 bg-green-950/70 backdrop-blur-sm p-5 md:p-6"
+        >
+          <h2 class="pixel-title text-lime-300 text-sm md:text-base uppercase mb-4">
+            Master Win Chance
+          </h2>
+          <div class="flex items-center gap-4 mb-3">
+            <input
+              id="masterRateSlider"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              class="dew-range flex-1"
+            />
+            <div class="flex items-center gap-1">
+              <input
+                id="masterRateInput"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                class="pixel-input w-20 text-center text-2xl py-1"
+              />
+              <span class="pixel-text text-lime-300 text-2xl">%</span>
+            </div>
+          </div>
+          <p id="masterRateSummary" class="pixel-text text-green-200 text-lg"></p>
+          <p class="pixel-text text-green-400/90 text-base mt-2">
+            Applies while prizes are in stock. When stock hits zero, every spin
+            lands on a loss automatically.
+          </p>
+        </section>
+
+        <!-- Mouse timer -->
+        <section
+          class="pixel-panel border-2 border-lime-500/40 bg-green-950/70 backdrop-blur-sm p-5 md:p-6"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="pixel-title text-lime-300 text-sm md:text-base uppercase">
+              Guaranteed Mouse Timer
+            </h2>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="mouseEnabled" type="checkbox" class="w-5 h-5 accent-lime-400" />
+              <span class="pixel-text text-green-200 text-lg">ON</span>
+            </label>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <span class="pixel-text text-green-200 text-lg">Every</span>
+            <input
+              id="mouseMin"
+              type="number"
+              min="1"
+              max="1440"
+              step="1"
+              class="pixel-input w-20 text-center text-2xl py-1"
+            />
+            <span class="pixel-text text-green-200 text-lg">to</span>
+            <input
+              id="mouseMax"
+              type="number"
+              min="1"
+              max="1440"
+              step="1"
+              class="pixel-input w-20 text-center text-2xl py-1"
+            />
+            <span class="pixel-text text-green-200 text-lg">minutes</span>
+          </div>
+          <p id="mouseCountdown" class="pixel-text text-lime-200 text-xl mb-3"></p>
+          <div id="mouseChips" class="flex flex-wrap gap-2 mb-4"></div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              id="mouseRescheduleBtn"
+              class="pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.55rem] py-3 px-4 border-b-4 border-green-950 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              Restart Timer
+            </button>
+            <button
+              id="mouseDueNowBtn"
+              class="pixel-btn bg-lime-700 hover:bg-lime-600 text-green-950 uppercase text-[0.55rem] py-3 px-4 border-b-4 border-lime-900 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              Force Mouse On Next Spin
+            </button>
+          </div>
+          <p class="pixel-text text-green-400/90 text-base mt-3">
+            Items with &quot;mouse&quot; in the name count. While the timer is
+            ON, mice are saved for the timer and can&apos;t be won on normal
+            spins. Timer changes apply instantly (no save needed).
+          </p>
+        </section>
+      </div>
+
+      <!-- Inventory -->
+      <section
+        class="pixel-panel border-2 border-lime-500/40 bg-green-950/70 backdrop-blur-sm p-5 md:p-6"
+      >
+        <h2 class="pixel-title text-lime-300 text-sm md:text-base uppercase mb-4">
+          Inventory &amp; Prize Chances
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[640px]">
+            <thead>
+              <tr class="pixel-text text-green-300 text-lg text-left border-b-2 border-lime-500/30">
+                <th class="py-2 pr-3">Item</th>
+                <th class="py-2 pr-3">Stock</th>
+                <th class="py-2 pr-3">Chance Weight</th>
+                <th class="py-2 pr-3">Win Share*</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="itemRows"></tbody>
+          </table>
+        </div>
+
+        <p class="pixel-text text-green-400/90 text-base mt-3">
+          *Share of winning spins. Chance = stock &times; weight, compared
+          against every other in-stock item. Items at 0 stock leave the wheel
+          automatically.
+        </p>
+
+        <!-- Add item -->
+        <div class="mt-5 pt-5 border-t-2 border-lime-500/30">
+          <h3 class="pixel-title text-lime-300 text-xs uppercase mb-3">Add Item</h3>
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[200px]">
+              <label class="pixel-text text-green-300 text-base block mb-1">Name</label>
+              <input
+                id="addName"
+                type="text"
+                maxlength="60"
+                class="pixel-input w-full text-xl py-2 px-3"
+                placeholder="e.g. Mountain Dew Cap"
+              />
+            </div>
+            <div>
+              <label class="pixel-text text-green-300 text-base block mb-1">Qty</label>
+              <input
+                id="addQty"
+                type="number"
+                min="0"
+                step="1"
+                value="1"
+                class="pixel-input w-24 text-center text-xl py-2"
+              />
+            </div>
+            <div>
+              <label class="pixel-text text-green-300 text-base block mb-1">Weight</label>
+              <input
+                id="addWeight"
+                type="number"
+                min="0"
+                step="0.05"
+                value="1"
+                class="pixel-input w-24 text-center text-xl py-2"
+              />
+            </div>
+            <button
+              id="addBtn"
+              class="pixel-btn bg-gradient-to-b from-lime-300 to-lime-500 hover:from-lime-200 hover:to-lime-400 text-green-950 uppercase text-[0.6rem] py-3 px-5 border-b-4 border-lime-800 active:border-b-0 active:translate-y-[4px] transition-all"
+            >
+              + Add
+            </button>
+          </div>
+          <p id="addError" class="pixel-text text-red-400 text-base mt-2 h-5"></p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Save bar -->
+    <div
+      id="saveBar"
+      class="hidden fixed bottom-0 left-0 right-0 z-40 bg-green-950/90 backdrop-blur-md border-t-2 border-lime-500/40 px-4 py-3"
+    >
+      <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <p id="dirtyLabel" class="pixel-text text-green-300 text-lg">
+          All changes saved
+        </p>
+        <button
+          id="saveBtn"
+          class="pixel-btn bg-gradient-to-b from-lime-300 to-lime-500 hover:from-lime-200 hover:to-lime-400 text-green-950 uppercase py-4 px-8 text-xs md:text-sm border-b-8 border-lime-800 active:border-b-0 active:translate-y-[8px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-[60] pixel-text text-xl px-6 py-3 pixel-panel border-2 border-lime-400 bg-green-950 text-lime-200 opacity-0 translate-y-[-20px] transition-all duration-300 pointer-events-none"
+    ></div>
+
+    <script>
+      const CONFIG_API_URL = "/api/wheel-config";
+      const EXPORT_API_URL = "/api/export-inventory";
+      const PASSCODE_STORAGE_KEY = "dew-admin-passcode-v1";
+      const MOUSE_NAME_PATTERN = /mouse/i;
+      const MAX_ITEMS = 40;
+
+      let passcode = "";
+      let serverState = null; // last state confirmed by the server
+      let draft = null; // editable copy: { items: [{name, qty, weight}], settings }
+      let baselineDraft = null; // draft as it was when loaded (to detect edits)
+      let baselineSnapshot = "";
+      let countdownTimer = null;
+      let pollTimer = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      // ---------- helpers ----------
+
+      function stateToDraft(state) {
+        return {
+          items: Object.keys(state.inventory).map((name) => ({
+            name,
+            qty: state.inventory[name],
+            weight: Number.isFinite(state.multipliers[name])
+              ? state.multipliers[name]
+              : 1,
+          })),
+          settings: { ...state.settings },
+        };
+      }
+
+      function draftSnapshot(d) {
+        return JSON.stringify(d);
+      }
+
+      function isDirty() {
+        return draft !== null && draftSnapshot(draft) !== baselineSnapshot;
+      }
+
+      function showToast(message, isError = false) {
+        const toast = $("toast");
+        toast.textContent = message;
+        toast.classList.toggle("border-lime-400", !isError);
+        toast.classList.toggle("text-lime-200", !isError);
+        toast.classList.toggle("border-red-500", isError);
+        toast.classList.toggle("text-red-300", isError);
+        toast.classList.add("toast-show");
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(
+          () => toast.classList.remove("toast-show"),
+          2600
+        );
+      }
+
+      function setSyncStatus(text, ok = true) {
+        $("syncStatus").textContent = text;
+        $("syncDot").className =
+          "inline-block w-3 h-3 rounded-full mr-1 align-middle " +
+          (ok ? "bg-lime-400" : "bg-red-500");
+      }
+
+      async function postConfig(body) {
+        const response = await fetch(CONFIG_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ ...body, passcode }),
+        });
+
+        const payload = await response.json().catch(() => null);
+
+        if (response.status === 401) {
+          const error = new Error("Invalid passcode");
+          error.unauthorized = true;
+          throw error;
+        }
+
+        if (!response.ok || !payload || !payload.ok) {
+          throw new Error(
+            (payload && payload.error) || "Server error (" + response.status + ")"
+          );
+        }
+
+        return payload.state;
+      }
+
+      // ---------- rendering ----------
+
+      function computeWinShares() {
+        const shares = {};
+        let total = 0;
+        for (const item of draft.items) {
+          const weight = item.qty > 0 ? item.qty * item.weight : 0;
+          shares[item.name] = weight;
+          total += weight;
+        }
+        for (const name of Object.keys(shares)) {
+          shares[name] = total > 0 ? (shares[name] / total) * 100 : 0;
+        }
+        return shares;
+      }
+
+      function renderItems() {
+        const tbody = $("itemRows");
+        tbody.innerHTML = "";
+        const shares = computeWinShares();
+
+        draft.items.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.className = "border-b border-lime-500/15";
+          const share = shares[item.name] || 0;
+          const isMouse = MOUSE_NAME_PATTERN.test(item.name);
+          const outOfStock = item.qty <= 0;
+
+          const nameCell = document.createElement("td");
+          nameCell.className = "py-3 pr-3";
+          nameCell.innerHTML =
+            '<span class="text-2xl ' +
+            (outOfStock ? "text-green-500/70 line-through" : "text-lime-100") +
+            '"></span>' +
+            (isMouse
+              ? ' <span class="pixel-text text-[0.65rem] text-green-950 bg-lime-400 rounded px-1.5 py-0.5 align-middle ml-1">MOUSE</span>'
+              : "") +
+            (outOfStock
+              ? ' <span class="pixel-text text-[0.65rem] text-red-300 border border-red-400/60 rounded px-1.5 py-0.5 align-middle ml-1">OUT</span>'
+              : "");
+          nameCell.querySelector("span").textContent = item.name;
+
+          const stockCell = document.createElement("td");
+          stockCell.className = "py-3 pr-3";
+          const stockWrap = document.createElement("div");
+          stockWrap.className = "flex items-center gap-2";
+
+          const minusBtn = document.createElement("button");
+          minusBtn.className = "qty-btn";
+          minusBtn.textContent = "-";
+          minusBtn.onclick = () => {
+            item.qty = Math.max(0, item.qty - 1);
+            renderItems();
+            updateDirtyUI();
+          };
+
+          const qtyInput = document.createElement("input");
+          qtyInput.type = "number";
+          qtyInput.min = "0";
+          qtyInput.step = "1";
+          qtyInput.value = item.qty;
+          qtyInput.className = "pixel-input w-20 text-center text-2xl py-1";
+          qtyInput.onchange = () => {
+            const value = Math.max(0, Math.floor(Number(qtyInput.value) || 0));
+            item.qty = value;
+            renderItems();
+            updateDirtyUI();
+          };
+
+          const plusBtn = document.createElement("button");
+          plusBtn.className = "qty-btn";
+          plusBtn.textContent = "+";
+          plusBtn.onclick = () => {
+            item.qty += 1;
+            renderItems();
+            updateDirtyUI();
+          };
+
+          stockWrap.append(minusBtn, qtyInput, plusBtn);
+          stockCell.appendChild(stockWrap);
+
+          const weightCell = document.createElement("td");
+          weightCell.className = "py-3 pr-3";
+          const weightInput = document.createElement("input");
+          weightInput.type = "number";
+          weightInput.min = "0";
+          weightInput.step = "0.05";
+          weightInput.value = item.weight;
+          weightInput.className = "pixel-input w-24 text-center text-2xl py-1";
+          weightInput.onchange = () => {
+            const value = Number(weightInput.value);
+            item.weight = Number.isFinite(value) && value >= 0 ? value : 0;
+            renderItems();
+            updateDirtyUI();
+          };
+          weightCell.appendChild(weightInput);
+
+          const shareCell = document.createElement("td");
+          shareCell.className = "py-3 pr-3 min-w-[130px]";
+          shareCell.innerHTML =
+            '<div class="text-2xl ' +
+            (share > 0 ? "text-lime-200" : "text-green-500/70") +
+            '">' +
+            share.toFixed(1) +
+            '%</div><div class="share-bar mt-1"><div style="width:' +
+            Math.min(100, share).toFixed(1) +
+            '%"></div></div>';
+
+          const removeCell = document.createElement("td");
+          removeCell.className = "py-3 text-right";
+          const removeBtn = document.createElement("button");
+          removeBtn.className =
+            "pixel-btn bg-red-900/70 hover:bg-red-800/80 text-red-200 uppercase text-[0.5rem] py-2 px-3 border-b-4 border-red-950 active:border-b-0 active:translate-y-[4px] transition-all";
+          removeBtn.textContent = "X";
+          removeBtn.title = "Remove item";
+          removeBtn.onclick = () => {
+            if (confirm('Remove "' + item.name + '" from the wheel?')) {
+              draft.items.splice(index, 1);
+              renderItems();
+              renderMouseChips();
+              updateDirtyUI();
+            }
+          };
+          removeCell.appendChild(removeBtn);
+
+          row.append(nameCell, stockCell, weightCell, shareCell, removeCell);
+          tbody.appendChild(row);
+        });
+
+        if (!draft.items.length) {
+          const row = document.createElement("tr");
+          row.innerHTML =
+            '<td colspan="5" class="py-6 text-center pixel-text text-green-400 text-xl">No items yet - add one below.</td>';
+          tbody.appendChild(row);
+        }
+      }
+
+      function renderMasterRate() {
+        const rate = Math.round(draft.settings.masterWinRate);
+        $("masterRateSlider").value = rate;
+        $("masterRateInput").value = rate;
+        $("masterRateSummary").textContent =
+          rate + "% of spins win a prize - " + (100 - rate) + "% land on TRY AGAIN";
+      }
+
+      function renderMouseSettings() {
+        $("mouseEnabled").checked = Boolean(draft.settings.mouseTimerEnabled);
+        $("mouseMin").value = draft.settings.mouseIntervalMinMinutes;
+        $("mouseMax").value = draft.settings.mouseIntervalMaxMinutes;
+        renderMouseChips();
+      }
+
+      function renderMouseChips() {
+        const wrap = $("mouseChips");
+        wrap.innerHTML = "";
+        const mice = draft.items.filter((item) =>
+          MOUSE_NAME_PATTERN.test(item.name)
+        );
+
+        if (!mice.length) {
+          wrap.innerHTML =
+            '<span class="pixel-text text-green-400 text-base">No mouse items in inventory.</span>';
+          return;
+        }
+
+        for (const mouse of mice) {
+          const chip = document.createElement("span");
+          chip.className =
+            "pixel-text text-base px-2.5 py-1 rounded border " +
+            (mouse.qty > 0
+              ? "text-lime-200 border-lime-400/60 bg-green-900/60"
+              : "text-green-500/70 border-green-700 bg-green-950/60 line-through");
+          chip.textContent = mouse.name + " x" + mouse.qty;
+          wrap.appendChild(chip);
+        }
+      }
+
+      function renderCountdown() {
+        const el = $("mouseCountdown");
+        if (!serverState) {
+          el.textContent = "";
+          return;
+        }
+
+        const enabled = serverState.settings && serverState.settings.mouseTimerEnabled;
+        const dueAt = serverState.nextMouseDueAt;
+        const hasMice = (serverState.mouseKeys || []).some(
+          (key) => (serverState.inventory[key] || 0) > 0
+        );
+
+        if (!enabled) {
+          el.textContent = "Timer is OFF - mice win like normal prizes.";
+          return;
+        }
+
+        if (!hasMice) {
+          el.textContent = "No mice in stock - timer is idle.";
+          return;
+        }
+
+        if (!Number.isFinite(dueAt)) {
+          el.textContent = "Timer will start on the next spin.";
+          return;
+        }
+
+        const remainingMs = dueAt - Date.now();
+        if (remainingMs <= 0) {
+          el.textContent = "MOUSE DUE - the next spin wins a mouse!";
+          return;
+        }
+
+        const totalSeconds = Math.floor(remainingMs / 1000);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        el.textContent =
+          "Next guaranteed mouse in " + h + ":" + pad(m) + ":" + pad(s);
+      }
+
+      function updateDirtyUI() {
+        const dirty = isDirty();
+        $("saveBtn").disabled = !dirty;
+        $("dirtyLabel").textContent = dirty
+          ? "UNSAVED CHANGES - not live yet"
+          : "All changes saved";
+        $("dirtyLabel").className =
+          "pixel-text text-lg " + (dirty ? "text-yellow-300" : "text-green-300");
+      }
+
+      function renderAll() {
+        renderItems();
+        renderMasterRate();
+        renderMouseSettings();
+        renderCountdown();
+        updateDirtyUI();
+      }
+
+      function applyServerState(state, { preserveDraft = false } = {}) {
+        serverState = state;
+
+        if (!preserveDraft || !draft) {
+          draft = stateToDraft(state);
+          baselineDraft = stateToDraft(state);
+          baselineSnapshot = draftSnapshot(baselineDraft);
+          renderAll();
+        } else {
+          // Keep local edits; refresh only the live timer display.
+          renderCountdown();
+        }
+
+        setSyncStatus("Synced " + new Date().toLocaleTimeString(), true);
+      }
+
+      // ---------- actions ----------
+
+      async function saveDraft() {
+        if (!isDirty()) return;
+
+        // Players may have won prizes while the admin was editing. For items
+        // whose stock the admin did NOT touch, save the latest live count
+        // (kept fresh by the 30s poll) instead of the stale loaded value.
+        const baselineByName = {};
+        if (baselineDraft) {
+          for (const base of baselineDraft.items) {
+            baselineByName[base.name] = base;
+          }
+        }
+
+        const inventory = {};
+        const multipliers = {};
+        for (const item of draft.items) {
+          const base = baselineByName[item.name];
+          const qtyUntouched = base && base.qty === item.qty;
+          const liveQty =
+            serverState && Number.isFinite(serverState.inventory[item.name])
+              ? serverState.inventory[item.name]
+              : item.qty;
+          inventory[item.name] = qtyUntouched ? liveQty : item.qty;
+          multipliers[item.name] = item.weight;
+        }
+
+        const saveBtn = $("saveBtn");
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+          const state = await postConfig({
+            replace: true,
+            inventory,
+            multipliers,
+            settings: draft.settings,
+          });
+          applyServerState(state);
+          showToast("SAVED - changes are live");
+        } catch (error) {
+          if (error.unauthorized) {
+            relock("Passcode no longer valid");
+            return;
+          }
+          showToast("SAVE FAILED: " + error.message, true);
+          setSyncStatus("Save failed", false);
+          updateDirtyUI();
+        } finally {
+          saveBtn.textContent = "Save Changes";
+        }
+      }
+
+      async function mouseTimerAction(action) {
+        try {
+          const state = await postConfig({ mouseTimerAction: action });
+          applyServerState(state, { preserveDraft: isDirty() });
+          showToast(
+            action === "dueNow"
+              ? "Next spin will win a mouse"
+              : "Mouse timer restarted"
+          );
+        } catch (error) {
+          if (error.unauthorized) {
+            relock("Passcode no longer valid");
+            return;
+          }
+          showToast("ACTION FAILED: " + error.message, true);
+        }
+      }
+
+      async function reloadFromServer() {
+        if (
+          isDirty() &&
+          !confirm("Discard your unsaved changes and reload from the server?")
+        ) {
+          return;
+        }
+
+        try {
+          const response = await fetch(CONFIG_API_URL, {
+            headers: { Accept: "application/json" },
+          });
+          const payload = await response.json();
+          if (!payload || !payload.ok) {
+            throw new Error((payload && payload.error) || "Bad response");
+          }
+          applyServerState(payload.state);
+          showToast("Reloaded from server");
+        } catch (error) {
+          showToast("RELOAD FAILED: " + error.message, true);
+          setSyncStatus("Reload failed", false);
+        }
+      }
+
+      function addItem() {
+        const nameInput = $("addName");
+        const qtyInput = $("addQty");
+        const weightInput = $("addWeight");
+        const errorEl = $("addError");
+        errorEl.textContent = "";
+
+        const name = nameInput.value.trim().slice(0, 60);
+        if (!name) {
+          errorEl.textContent = "Enter an item name.";
+          return;
+        }
+
+        if (
+          draft.items.some(
+            (item) => item.name.toLowerCase() === name.toLowerCase()
+          )
+        ) {
+          errorEl.textContent = "That item already exists.";
+          return;
+        }
+
+        if (draft.items.length >= MAX_ITEMS) {
+          errorEl.textContent = "Item limit reached (" + MAX_ITEMS + ").";
+          return;
+        }
+
+        const qty = Math.max(0, Math.floor(Number(qtyInput.value) || 0));
+        const weightRaw = Number(weightInput.value);
+        const weight =
+          Number.isFinite(weightRaw) && weightRaw >= 0 ? weightRaw : 1;
+
+        draft.items.push({ name, qty, weight });
+        nameInput.value = "";
+        qtyInput.value = "1";
+        weightInput.value = "1";
+        renderItems();
+        renderMouseChips();
+        updateDirtyUI();
+      }
+
+      function relock(message) {
+        sessionStorage.removeItem(PASSCODE_STORAGE_KEY);
+        passcode = "";
+        clearInterval(countdownTimer);
+        clearInterval(pollTimer);
+        $("adminRoot").classList.add("hidden");
+        $("saveBar").classList.add("hidden");
+        $("gateOverlay").classList.remove("hidden");
+        if (message) {
+          $("gateError").textContent = message;
+        }
+      }
+
+      // ---------- gate / boot ----------
+
+      async function tryUnlock(candidate, { silent = false } = {}) {
+        const gateBtn = $("gateBtn");
+        gateBtn.disabled = true;
+        gateBtn.textContent = "CHECKING...";
+
+        try {
+          passcode = candidate;
+          const state = await postConfig({ verifyOnly: true });
+          sessionStorage.setItem(PASSCODE_STORAGE_KEY, candidate);
+          $("gateOverlay").classList.add("hidden");
+          $("adminRoot").classList.remove("hidden");
+          $("saveBar").classList.remove("hidden");
+          applyServerState(state);
+          startTimers();
+          return true;
+        } catch (error) {
+          passcode = "";
+          if (!silent) {
+            $("gateError").textContent = error.unauthorized
+              ? "Wrong passcode."
+              : "Error: " + error.message;
+            const panel = $("gatePanel");
+            panel.classList.remove("gate-shake");
+            void panel.offsetWidth;
+            panel.classList.add("gate-shake");
+          }
+          return false;
+        } finally {
+          gateBtn.disabled = false;
+          gateBtn.textContent = "UNLOCK";
+        }
+      }
+
+      function startTimers() {
+        clearInterval(countdownTimer);
+        clearInterval(pollTimer);
+        countdownTimer = setInterval(renderCountdown, 1000);
+        pollTimer = setInterval(async () => {
+          try {
+            const response = await fetch(CONFIG_API_URL, {
+              headers: { Accept: "application/json" },
+            });
+            const payload = await response.json();
+            if (payload && payload.ok) {
+              applyServerState(payload.state, { preserveDraft: isDirty() });
+            }
+          } catch {
+            setSyncStatus("Connection lost - retrying", false);
+          }
+        }, 30000);
+      }
+
+      $("gateBtn").addEventListener("click", () =>
+        tryUnlock($("gateInput").value)
+      );
+      $("gateInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          tryUnlock($("gateInput").value);
+        }
+      });
+
+      $("saveBtn").addEventListener("click", saveDraft);
+      $("addBtn").addEventListener("click", addItem);
+      $("addName").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") addItem();
+      });
+      $("reloadBtn").addEventListener("click", reloadFromServer);
+      $("exportBtn").addEventListener("click", () =>
+        window.open(EXPORT_API_URL, "_blank")
+      );
+      $("lockBtn").addEventListener("click", () => {
+        relock();
+        $("gateError").textContent = "";
+        $("gateInput").value = "";
+      });
+
+      $("masterRateSlider").addEventListener("input", (event) => {
+        draft.settings.masterWinRate = Number(event.target.value);
+        renderMasterRate();
+        updateDirtyUI();
+      });
+      $("masterRateInput").addEventListener("change", (event) => {
+        const value = Math.min(100, Math.max(0, Number(event.target.value) || 0));
+        draft.settings.masterWinRate = value;
+        renderMasterRate();
+        updateDirtyUI();
+      });
+
+      $("mouseEnabled").addEventListener("change", (event) => {
+        draft.settings.mouseTimerEnabled = event.target.checked;
+        updateDirtyUI();
+      });
+      $("mouseMin").addEventListener("change", (event) => {
+        const value = Math.min(1440, Math.max(1, Math.round(Number(event.target.value) || 1)));
+        draft.settings.mouseIntervalMinMinutes = value;
+        renderMouseSettings();
+        updateDirtyUI();
+      });
+      $("mouseMax").addEventListener("change", (event) => {
+        const value = Math.min(1440, Math.max(1, Math.round(Number(event.target.value) || 1)));
+        draft.settings.mouseIntervalMaxMinutes = value;
+        renderMouseSettings();
+        updateDirtyUI();
+      });
+
+      $("mouseRescheduleBtn").addEventListener("click", () =>
+        mouseTimerAction("reschedule")
+      );
+      $("mouseDueNowBtn").addEventListener("click", () =>
+        mouseTimerAction("dueNow")
+      );
+
+      window.addEventListener("beforeunload", (event) => {
+        if (isDirty()) {
+          event.preventDefault();
+          event.returnValue = "";
+        }
+      });
+
+      // Boot: reuse a passcode saved earlier in this browser session.
+      (async () => {
+        const saved = sessionStorage.getItem(PASSCODE_STORAGE_KEY);
+        if (saved) {
+          const ok = await tryUnlock(saved, { silent: true });
+          if (ok) return;
+        }
+        $("gateInput").focus();
+      })();
+    </script>
+  </body>
+</html>

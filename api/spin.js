@@ -2,8 +2,7 @@ const {
   ensureMouseSchedule,
   getProductChancePercentages,
   pickPrizeAndMutateState,
-  getState,
-  setState
+  saveStateWithRetry
 } = require("./_lib/wheel-state");
 
 function sendJson(res, status, payload) {
@@ -18,11 +17,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const state = await getState();
-    ensureMouseSchedule(state);
-
-    const prize = pickPrizeAndMutateState(state, Date.now());
-    await setState(state);
+    // CAS retry: if an admin save (or another spin) lands between our read
+    // and write, the whole pick is redone against the fresh state.
+    const { state, result: prize } = await saveStateWithRetry((current) => {
+      ensureMouseSchedule(current);
+      return pickPrizeAndMutateState(current, Date.now());
+    });
 
     sendJson(res, 200, {
       ok: true,
@@ -30,6 +30,7 @@ module.exports = async function handler(req, res) {
       state: {
         inventory: state.inventory,
         multipliers: state.multipliers,
+        settings: state.settings,
         nextMouseDueAt: state.nextMouseDueAt,
         chancePercentages: getProductChancePercentages(state)
       }

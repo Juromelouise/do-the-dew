@@ -13,6 +13,9 @@ const fs = require("fs");
 const path = require("path");
 
 const pvpHandler = require("../api/pvp.js");
+const wheelConfigHandler = require("../api/wheel-config.js");
+const spinHandler = require("../api/spin.js");
+const exportInventoryHandler = require("../api/export-inventory.js");
 
 const PORT = parseInt(process.argv[2], 10) || 8123;
 const ROOT = path.join(__dirname, "..");
@@ -57,8 +60,45 @@ function serveStatic(req, res, urlPath) {
   });
 }
 
+// Vercel-style helpers on plain Node res, used by all shimmed handlers.
+function adaptRes(res) {
+  res.status = function (code) {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = function (obj) {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.end(JSON.stringify(obj));
+    return res;
+  };
+  res.send = function (data) {
+    res.end(data);
+    return res;
+  };
+}
+
+// These handlers read the request stream themselves (or ignore it), so the
+// shim must NOT pre-consume the body like the pvp shim does.
+const WHEEL_API_ROUTES = [
+  { prefix: "/api/wheel-config", handler: wheelConfigHandler },
+  { prefix: "/api/spin", handler: spinHandler },
+  { prefix: "/api/export-inventory", handler: exportInventoryHandler },
+];
+
 const server = http.createServer((req, res) => {
   const urlPath = req.url || "/";
+
+  const wheelRoute = WHEEL_API_ROUTES.find((route) =>
+    urlPath.startsWith(route.prefix)
+  );
+  if (wheelRoute) {
+    adaptRes(res);
+    Promise.resolve(wheelRoute.handler(req, res)).catch((err) => {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ ok: false, error: String(err) }));
+    });
+    return;
+  }
 
   if (urlPath.startsWith("/api/pvp")) {
     // Shim the Vercel handler contract onto plain Node req/res
@@ -87,10 +127,15 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Do The Dew PVP local server running:`);
+  console.log(`Do The Dew local server running:`);
+  console.log(`  Wheel:     http://localhost:${PORT}/spin_the_wheel.html`);
+  console.log(`  Admin:     http://localhost:${PORT}/admin.html`);
   console.log(`  Player 1:  http://localhost:${PORT}/pvp.html?p=1`);
   console.log(`  Player 2:  http://localhost:${PORT}/pvp.html?p=2`);
   console.log(
     `  (second laptop on same LAN: use this machine's IP instead of localhost)`
+  );
+  console.log(
+    `  Wheel/admin state is in-memory here (no KV) and resets on restart.`
   );
 });
