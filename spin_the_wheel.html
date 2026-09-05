@@ -1097,8 +1097,35 @@
         return endMs - nowMs;
       }
 
+      // Offline fallback only (live spins are decided by /api/spin). Mirrors
+      // the server: settings.lossWeights from /admin.html decide which loss
+      // label a losing spin shows; all weights at 0 falls back to even.
       function pickLossLabel() {
-        return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
+        const configured =
+          serverSettings && serverSettings.lossWeights
+            ? serverSettings.lossWeights
+            : {};
+        const entries = LOSS_LABELS.map((label) => {
+          const raw = Number(configured[label]);
+          return { label, weight: Number.isFinite(raw) && raw > 0 ? raw : 0 };
+        }).filter((entry) => entry.weight > 0);
+        const totalWeight = entries.reduce(
+          (sum, entry) => sum + entry.weight,
+          0
+        );
+        if (!totalWeight) {
+          return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
+        }
+
+        let roll = Math.random() * totalWeight;
+        for (const entry of entries) {
+          roll -= entry.weight;
+          if (roll <= 0) {
+            return entry.label;
+          }
+        }
+
+        return entries[entries.length - 1].label;
       }
 
       function shouldAwardRegularProduct(nowMs) {

@@ -30,6 +30,13 @@ const DEFAULT_STATE = {
     mouseTimerEnabled: true,
     mouseIntervalMinMinutes: 135,
     mouseIntervalMaxMinutes: 240,
+    // Relative chance of each loss label whenever a spin lands on a loss.
+    // The loss share itself is 100 - masterWinRate; these only split it.
+    // Keys must match LOSS_LABELS. A label weighted 0 never shows.
+    lossWeights: {
+      "Try Again": 1,
+      "Better Luck Next Time": 1,
+    },
   },
   nextMouseDueAt: null,
 };
@@ -82,6 +89,20 @@ function sanitizeSettings(input) {
     const swap = settings.mouseIntervalMinMinutes;
     settings.mouseIntervalMinMinutes = settings.mouseIntervalMaxMinutes;
     settings.mouseIntervalMaxMinutes = swap;
+  }
+
+  // Fresh object: the spread above would share DEFAULT_STATE's lossWeights.
+  const sourceLossWeights =
+    source.lossWeights && typeof source.lossWeights === "object"
+      ? source.lossWeights
+      : {};
+  settings.lossWeights = {};
+  for (const label of LOSS_LABELS) {
+    const raw = Number(sourceLossWeights[label]);
+    settings.lossWeights[label] =
+      Number.isFinite(raw) && raw >= 0
+        ? raw
+        : DEFAULT_STATE.settings.lossWeights[label];
   }
 
   return settings;
@@ -196,8 +217,37 @@ function shouldAwardRegularProduct(state) {
   return Math.random() * 100 < state.settings.masterWinRate;
 }
 
-function pickLossLabel() {
-  return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
+function getLossWeightEntries(state) {
+  const configured =
+    state && state.settings && state.settings.lossWeights
+      ? state.settings.lossWeights
+      : {};
+
+  return LOSS_LABELS.map((label) => {
+    const raw = Number(configured[label]);
+    return { label, weight: Number.isFinite(raw) && raw > 0 ? raw : 0 };
+  }).filter((entry) => entry.weight > 0);
+}
+
+// Which loss label a losing spin shows, weighted by the admin-set
+// settings.lossWeights. If every label is weighted 0 the split falls back
+// to even, so a loss can always be displayed.
+function pickLossLabel(state) {
+  const entries = getLossWeightEntries(state);
+  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  if (!totalWeight) {
+    return LOSS_LABELS[Math.floor(Math.random() * LOSS_LABELS.length)];
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const entry of entries) {
+    roll -= entry.weight;
+    if (roll <= 0) {
+      return entry.label;
+    }
+  }
+
+  return entries[entries.length - 1].label;
 }
 
 function getInventoryCountForKeys(state, keys) {
@@ -283,7 +333,7 @@ function pickPrizeAndMutateState(state, nowMs = Date.now()) {
       includeOnlyKeys: mouseKeys,
     });
     if (!forcedMouse) {
-      return pickLossLabel();
+      return pickLossLabel(state);
     }
 
     state.inventory[forcedMouse] -= 1;
@@ -292,11 +342,11 @@ function pickPrizeAndMutateState(state, nowMs = Date.now()) {
   }
 
   if (!inEventWindow) {
-    return pickLossLabel();
+    return pickLossLabel(state);
   }
 
   if (!shouldAwardRegularProduct(state)) {
-    return pickLossLabel();
+    return pickLossLabel(state);
   }
 
   // While the timer is reserving mice for its forced drops, regular spins
@@ -306,7 +356,7 @@ function pickPrizeAndMutateState(state, nowMs = Date.now()) {
   });
 
   if (!weightedPick) {
-    return pickLossLabel();
+    return pickLossLabel(state);
   }
 
   state.inventory[weightedPick] -= 1;

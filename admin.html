@@ -150,6 +150,10 @@
         transition: width 0.25s ease;
       }
 
+      .share-bar-loss > div {
+        background: linear-gradient(to right, #b91c1c, #fca5a5);
+      }
+
       .qty-btn {
         font-family: "Press Start 2P", monospace;
         font-size: 0.7rem;
@@ -388,7 +392,10 @@
         <p class="pixel-text text-green-400/90 text-base mt-3">
           *Share of winning spins. Chance = stock &times; weight, compared
           against every other in-stock item. Items at 0 stock leave the wheel
-          automatically.
+          automatically. Loss slices never run out: Master Win Chance sets how
+          many spins lose, and each loss label&apos;s weight splits those spins
+          between TRY AGAIN and BETTER LUCK NEXT TIME. Weight 0 switches a
+          label off.
         </p>
 
         <!-- Add item -->
@@ -470,8 +477,13 @@
       const PASSCODE_STORAGE_KEY = "dew-admin-passcode-v1";
       const MOUSE_NAME_PATTERN = /mouse/i;
       const MAX_ITEMS = 40;
-      // Names the game client renders as loss slices — not allowed as items.
-      const RESERVED_NAMES = new Set(["try again", "better luck next time"]);
+      // Loss slices: what the wheel lands on when a spin doesn't win. They're
+      // listed in the table with their own chance weight, but can't be
+      // renamed or removed, and prize items can't reuse their names.
+      const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
+      const RESERVED_NAMES = new Set(
+        LOSS_LABELS.map((label) => label.toLowerCase())
+      );
 
       let passcode = "";
       let serverState = null; // last state confirmed by the server
@@ -485,6 +497,23 @@
 
       // ---------- helpers ----------
 
+      // One weight per loss label, defaulting to 1 (even split) when the
+      // server hasn't stored any yet.
+      function draftLossWeights(settings) {
+        const source =
+          settings &&
+          settings.lossWeights &&
+          typeof settings.lossWeights === "object"
+            ? settings.lossWeights
+            : {};
+        const weights = {};
+        for (const label of LOSS_LABELS) {
+          const raw = Number(source[label]);
+          weights[label] = Number.isFinite(raw) && raw >= 0 ? raw : 1;
+        }
+        return weights;
+      }
+
       function stateToDraft(state) {
         return {
           items: Object.keys(state.inventory).map((name) => ({
@@ -494,7 +523,10 @@
               ? state.multipliers[name]
               : 1,
           })),
-          settings: { ...state.settings },
+          settings: {
+            ...state.settings,
+            lossWeights: draftLossWeights(state.settings),
+          },
         };
       }
 
@@ -567,6 +599,31 @@
         }
         for (const name of Object.keys(shares)) {
           shares[name] = total > 0 ? (shares[name] / total) * 100 : 0;
+        }
+        return shares;
+      }
+
+      // Loss rows: Master Win Chance decides how many spins lose in total;
+      // each label's weight splits that pool. All weights at 0 => the server
+      // splits losses evenly, mirrored here.
+      function computeLossShares() {
+        const lossPool = 100 - Math.round(draft.settings.masterWinRate);
+        const weights = draft.settings.lossWeights;
+        const weightOf = (label) => (weights[label] > 0 ? weights[label] : 0);
+        const total = LOSS_LABELS.reduce(
+          (sum, label) => sum + weightOf(label),
+          0
+        );
+        const shares = {};
+        for (const label of LOSS_LABELS) {
+          const ofLosses =
+            total > 0
+              ? (weightOf(label) / total) * 100
+              : 100 / LOSS_LABELS.length;
+          shares[label] = {
+            ofLosses,
+            ofAllSpins: (lossPool * ofLosses) / 100,
+          };
         }
         return shares;
       }
@@ -690,14 +747,113 @@
             '<td colspan="5" class="py-6 text-center pixel-text text-green-400 text-xl">No items yet - add one below.</td>';
           tbody.appendChild(row);
         }
+
+        renderLossRows(tbody);
+      }
+
+      // Pinned rows for the two loss labels. Same columns as prizes, but no
+      // stock (a loss never runs out) and no remove button.
+      function renderLossRows(tbody) {
+        const shares = computeLossShares();
+        const lossPool = 100 - Math.round(draft.settings.masterWinRate);
+
+        const heading = document.createElement("tr");
+        heading.innerHTML =
+          '<td colspan="5" class="pt-6 pb-2 border-b-2 border-red-400/30">' +
+          '<span class="pixel-title text-red-300 text-[0.6rem] uppercase">Loss Slices</span>' +
+          '<span class="pixel-text text-green-300 text-base ml-3"></span></td>';
+        heading.querySelector(".pixel-text").textContent =
+          lossPool +
+          "% of spins lose (from Master Win Chance). Weight decides which label those spins land on.";
+        tbody.appendChild(heading);
+
+        for (const label of LOSS_LABELS) {
+          const weight = draft.settings.lossWeights[label];
+          const share = shares[label];
+          const isOff = !(weight > 0);
+
+          const row = document.createElement("tr");
+          row.className = "border-b border-red-400/15";
+
+          const nameCell = document.createElement("td");
+          nameCell.className = "py-3 pr-3";
+          nameCell.innerHTML =
+            '<span class="text-2xl ' +
+            (isOff ? "text-green-500/70 line-through" : "text-red-200") +
+            '"></span>' +
+            ' <span class="pixel-text text-[0.65rem] text-red-100 bg-red-800 rounded px-1.5 py-0.5 align-middle ml-1">LOSS</span>' +
+            (isOff
+              ? ' <span class="pixel-text text-[0.65rem] text-red-300 border border-red-400/60 rounded px-1.5 py-0.5 align-middle ml-1">OFF</span>'
+              : "");
+          nameCell.querySelector("span").textContent = label;
+
+          const stockCell = document.createElement("td");
+          stockCell.className =
+            "py-3 pr-3 pixel-text text-green-500/70 text-lg";
+          stockCell.textContent = "Unlimited";
+
+          const weightCell = document.createElement("td");
+          weightCell.className = "py-3 pr-3";
+          const weightInput = document.createElement("input");
+          weightInput.type = "number";
+          weightInput.min = "0";
+          weightInput.step = "0.05";
+          weightInput.value = weight;
+          weightInput.className = "pixel-input w-24 text-center text-2xl py-1";
+          weightInput.onchange = () => {
+            const value = Number(weightInput.value);
+            draft.settings.lossWeights[label] =
+              Number.isFinite(value) && value >= 0 ? value : 0;
+            renderItems();
+            renderMasterRate();
+            updateDirtyUI();
+          };
+          weightCell.appendChild(weightInput);
+
+          const shareCell = document.createElement("td");
+          shareCell.className = "py-3 pr-3 min-w-[130px]";
+          shareCell.innerHTML =
+            '<div class="text-2xl ' +
+            (share.ofAllSpins > 0 ? "text-red-200" : "text-green-500/70") +
+            '">' +
+            share.ofAllSpins.toFixed(1) +
+            '% <span class="text-base text-green-400/90">of all spins</span></div>' +
+            '<div class="share-bar share-bar-loss mt-1"><div style="width:' +
+            Math.min(100, share.ofLosses).toFixed(1) +
+            '%"></div></div>' +
+            '<div class="pixel-text text-green-400/90 text-base mt-1">' +
+            share.ofLosses.toFixed(0) +
+            "% of losing spins</div>";
+
+          const fixedCell = document.createElement("td");
+          fixedCell.className =
+            "py-3 text-right pixel-text text-green-500/70 text-base uppercase";
+          fixedCell.textContent = "Fixed";
+
+          row.append(nameCell, stockCell, weightCell, shareCell, fixedCell);
+          tbody.appendChild(row);
+        }
       }
 
       function renderMasterRate() {
         const rate = Math.round(draft.settings.masterWinRate);
         $("masterRateSlider").value = rate;
         $("masterRateInput").value = rate;
+        const shares = computeLossShares();
+        const split = LOSS_LABELS.map(
+          (label) =>
+            label.toUpperCase() +
+            " " +
+            shares[label].ofAllSpins.toFixed(1) +
+            "%"
+        ).join(" / ");
         $("masterRateSummary").textContent =
-          rate + "% of spins win a prize - " + (100 - rate) + "% land on TRY AGAIN";
+          rate +
+          "% of spins win a prize - " +
+          (100 - rate) +
+          "% lose (" +
+          split +
+          ")";
       }
 
       function renderMouseSettings() {
@@ -1093,15 +1249,19 @@
         $("gateInput").value = "";
       });
 
+      // Loss rows show "% of all spins", which depends on the master rate,
+      // so they re-render alongside the summary.
       $("masterRateSlider").addEventListener("input", (event) => {
         draft.settings.masterWinRate = Number(event.target.value);
         renderMasterRate();
+        renderItems();
         updateDirtyUI();
       });
       $("masterRateInput").addEventListener("change", (event) => {
         const value = Math.min(100, Math.max(0, Number(event.target.value) || 0));
         draft.settings.masterWinRate = value;
         renderMasterRate();
+        renderItems();
         updateDirtyUI();
       });
 
