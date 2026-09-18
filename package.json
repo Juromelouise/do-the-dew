@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "local": "node scripts/pvp-local-server.js",
-    "pvp:local": "node scripts/pvp-local-server.js"
+    "pvp:local": "node scripts/pvp-local-server.js",
+    "build:pvp-css": "tailwindcss -i tailwind.input.css -o pvp.tailwind.css --content pvp.html --minify"
   },
   "dependencies": {
     "xlsx": "^0.18.5"

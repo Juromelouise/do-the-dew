@@ -31,6 +31,7 @@ const MIME = {
   ".gif": "image/gif",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
 };
 
 function serveStatic(req, res, urlPath) {
