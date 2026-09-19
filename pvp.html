@@ -1671,6 +1671,16 @@
         }
       }
 
+      // Button remap set on admin.html (per browser). Returns the lane
+      // (D/E/W) a pressed key drives, or undefined.
+      function laneForKey(key) {
+        let map = {};
+        try {
+          map = JSON.parse(localStorage.getItem("dew-key-map-v1")) || {};
+        } catch (e) {}
+        return flavorKeys.find((lane) => (map[lane] || lane) === key);
+      }
+
       window.addEventListener("keydown", (e) => {
         if (me === null || e.repeat) return;
         initAudio();
@@ -1684,8 +1694,9 @@
           return;
         }
 
-        if (flavorKeys.includes(key)) {
-          applyLocalInput(key);
+        const lane = laneForKey(key);
+        if (lane) {
+          applyLocalInput(lane);
         }
       });
 

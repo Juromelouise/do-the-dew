@@ -1076,14 +1076,24 @@
         }
       }
 
+      // Button remap set on admin.html (per browser). Returns the lane
+      // (D/E/W) a pressed key drives, or undefined.
+      function laneForKey(key) {
+        let map = {};
+        try {
+          map = JSON.parse(localStorage.getItem("dew-key-map-v1")) || {};
+        } catch (e) {}
+        return flavorKeys.find((lane) => (map[lane] || lane) === key);
+      }
+
       // Event Listeners
       window.addEventListener("keydown", (e) => {
-        const key = e.key.toUpperCase();
+        const lane = laneForKey(e.key.toUpperCase());
         initAudio(); // Attempt to initialize on any keydown
 
         if (currentState === "PLAYING") {
-          if (flavorKeys.includes(key)) {
-            handleInput(key);
+          if (lane) {
+            handleInput(lane);
           }
         } else if (
           (currentState === "START" ||
@@ -1091,8 +1101,8 @@
             currentState === "WIN") &&
           !gameOverCooldown
         ) {
-          if (flavorKeys.includes(key)) {
-            currentFlavor = key;
+          if (lane) {
+            currentFlavor = lane;
             updateUIState();
           }
           startCountdown();
