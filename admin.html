@@ -452,7 +452,7 @@
         <h2 class="pixel-title text-lime-300 text-sm md:text-base uppercase mb-4">
           Game Buttons (This Computer)
         </h2>
-        <div id="keyMapRows" class="grid grid-cols-3 gap-3 mb-3"></div>
+        <div id="keyMapRows" class="grid grid-cols-[auto_1fr_1fr_1fr] items-center gap-3 mb-3"></div>
         <button
           id="keyMapResetBtn"
           class="pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.55rem] py-3 px-4 border-b-4 border-green-950 active:border-b-0 active:translate-y-[4px] transition-all"
@@ -462,7 +462,8 @@
         <p class="pixel-text text-green-400/90 text-base mt-3">
           Click a lane, then press the controller button you want for it (Esc
           cancels). Saved instantly in this browser only, so set it up on each
-          game laptop. Applies to the solo game and the 1v1.
+          game laptop. P1 drives the solo game and the Player 1 screen of the
+          1v1; P2 drives the Player 2 screen.
         </p>
       </section>
     </main>
@@ -1253,17 +1254,32 @@
         if (event.key === "Enter") addItem();
       });
       // ---------- game button mapping (localStorage, read by index/pvp) ----------
-      const KEY_MAP_STORAGE_KEY = "dew-key-map-v1";
+      // P1 keeps the original storage key so existing mappings survive.
+      const KEY_MAP_STORAGE_KEYS = {
+        P1: "dew-key-map-v1",
+        P2: "dew-key-map-p2-v1",
+      };
+      const PLAYERS = ["P1", "P2"];
       const LANES = ["D", "E", "W"];
-      let keyMap = { D: "D", E: "E", W: "W" };
-      let capturingLane = null;
+      let keyMaps = {};
+      let capturing = null; // { player, lane }
 
-      try {
-        Object.assign(
-          keyMap,
-          JSON.parse(localStorage.getItem(KEY_MAP_STORAGE_KEY))
-        );
-      } catch (e) {}
+      function resetKeyMaps() {
+        keyMaps = {
+          P1: { D: "D", E: "E", W: "W" },
+          P2: { D: "D", E: "E", W: "W" },
+        };
+      }
+
+      resetKeyMaps();
+      for (const player of PLAYERS) {
+        try {
+          Object.assign(
+            keyMaps[player],
+            JSON.parse(localStorage.getItem(KEY_MAP_STORAGE_KEYS[player]))
+          );
+        } catch (e) {}
+      }
 
       function keyLabel(key) {
         return key === " " ? "SPACE" : key;
@@ -1271,26 +1287,38 @@
 
       function renderKeyMap() {
         $("keyMapRows").innerHTML = "";
-        for (const lane of LANES) {
-          const btn = document.createElement("button");
-          btn.className =
-            "pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.6rem] py-4 px-2 border-b-4 border-green-950";
-          btn.textContent =
-            capturingLane === lane
-              ? `${lane}: press a key…`
-              : `${lane} = ${keyLabel(keyMap[lane])}`;
-          btn.addEventListener("click", () => {
-            btn.blur(); // so Enter/Space aren't swallowed as a button click
-            capturingLane = lane;
-            renderKeyMap();
-          });
-          $("keyMapRows").appendChild(btn);
+        for (const player of PLAYERS) {
+          const label = document.createElement("span");
+          label.className = "pixel-title text-lime-300 text-xs pr-2";
+          label.textContent = player;
+          $("keyMapRows").appendChild(label);
+
+          for (const lane of LANES) {
+            const btn = document.createElement("button");
+            btn.className =
+              "pixel-btn bg-green-900 hover:bg-green-800 text-lime-300 uppercase text-[0.6rem] py-4 px-2 border-b-4 border-green-950";
+            btn.textContent =
+              capturing && capturing.player === player && capturing.lane === lane
+                ? `${lane}: press a key…`
+                : `${lane} = ${keyLabel(keyMaps[player][lane])}`;
+            btn.addEventListener("click", () => {
+              btn.blur(); // so Enter/Space aren't swallowed as a button click
+              capturing = { player, lane };
+              renderKeyMap();
+            });
+            $("keyMapRows").appendChild(btn);
+          }
         }
       }
 
       function saveKeyMap(message) {
         try {
-          localStorage.setItem(KEY_MAP_STORAGE_KEY, JSON.stringify(keyMap));
+          for (const player of PLAYERS) {
+            localStorage.setItem(
+              KEY_MAP_STORAGE_KEYS[player],
+              JSON.stringify(keyMaps[player])
+            );
+          }
           showToast(message);
         } catch (e) {
           showToast("Couldn't save buttons in this browser", true);
@@ -1299,26 +1327,28 @@
       }
 
       window.addEventListener("keydown", (event) => {
-        if (!capturingLane) return;
+        if (!capturing) return;
         event.preventDefault();
         const key = event.key.toUpperCase();
-        const lane = capturingLane;
-        capturingLane = null;
+        const { player, lane } = capturing;
+        capturing = null;
         if (key === "ESCAPE") return renderKeyMap();
         if (key === "R") {
           showToast("R is reserved for the 1v1 reset", true);
           return renderKeyMap();
         }
-        // Key already on another lane? Swap so no two lanes share a key.
+        // Key already on another lane of this player? Swap so no two lanes
+        // share a key.
+        const keyMap = keyMaps[player];
         const other = LANES.find((l) => l !== lane && keyMap[l] === key);
         if (other) keyMap[other] = keyMap[lane];
         keyMap[lane] = key;
-        saveKeyMap(`${lane} is now ${keyLabel(key)}`);
+        saveKeyMap(`${player} ${lane} is now ${keyLabel(key)}`);
       });
 
       $("keyMapResetBtn").addEventListener("click", () => {
-        capturingLane = null;
-        keyMap = { D: "D", E: "E", W: "W" };
+        capturing = null;
+        resetKeyMaps();
         saveKeyMap("Buttons reset to D E W");
       });
 

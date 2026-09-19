@@ -1671,12 +1671,13 @@
         }
       }
 
-      // Button remap set on admin.html (per browser). Returns the lane
-      // (D/E/W) a pressed key drives, or undefined.
+      // Button remap set on admin.html (per browser, separate for P1/P2).
+      // Returns the lane (D/E/W) a pressed key drives, or undefined.
       function laneForKey(key) {
         let map = {};
         try {
-          map = JSON.parse(localStorage.getItem("dew-key-map-v1")) || {};
+          const storageKey = me === 2 ? "dew-key-map-p2-v1" : "dew-key-map-v1";
+          map = JSON.parse(localStorage.getItem(storageKey)) || {};
         } catch (e) {}
         return flavorKeys.find((lane) => (map[lane] || lane) === key);
       }
