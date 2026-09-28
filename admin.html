@@ -394,8 +394,9 @@
           against every other in-stock item. Items at 0 stock leave the wheel
           automatically. Loss slices never run out: Master Win Chance sets how
           many spins lose, and each loss label&apos;s weight splits those spins
-          between TRY AGAIN and BETTER LUCK NEXT TIME. Weight 0 switches a
-          label off.
+          between BETTER LUCK NEXT TIME and SPIN THE DEW AGAIN. Weight 0 means
+          no spin lands on it. A loss label&apos;s Stock number is how many
+          slices of it the wheel shows (1-10).
         </p>
 
         <!-- Add item -->
@@ -500,9 +501,11 @@
       const MOUSE_NAME_PATTERN = /mouse/i;
       const MAX_ITEMS = 40;
       // Loss slices: what the wheel lands on when a spin doesn't win. They're
-      // listed in the table with their own chance weight, but can't be
-      // renamed or removed, and prize items can't reuse their names.
-      const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
+      // listed in the table with their own chance weight and slice count,
+      // but can't be renamed or removed, and prize items can't reuse their
+      // names.
+      const LOSS_LABELS = ["Better Luck Next Time", "Spin The Dew Again"];
+      const MAX_LOSS_SLICES = 10;
       const RESERVED_NAMES = new Set(
         LOSS_LABELS.map((label) => label.toLowerCase())
       );
@@ -519,21 +522,19 @@
 
       // ---------- helpers ----------
 
-      // One weight per loss label, defaulting to 1 (even split) when the
-      // server hasn't stored any yet.
-      function draftLossWeights(settings) {
+      // One value per loss label from settings[key] (lossWeights,
+      // lossSlices), using `fallback` when the server hasn't stored one yet.
+      function draftLossMap(settings, key, fallback) {
         const source =
-          settings &&
-          settings.lossWeights &&
-          typeof settings.lossWeights === "object"
-            ? settings.lossWeights
+          settings && settings[key] && typeof settings[key] === "object"
+            ? settings[key]
             : {};
-        const weights = {};
+        const values = {};
         for (const label of LOSS_LABELS) {
           const raw = Number(source[label]);
-          weights[label] = Number.isFinite(raw) && raw >= 0 ? raw : 1;
+          values[label] = Number.isFinite(raw) && raw >= 0 ? raw : fallback;
         }
-        return weights;
+        return values;
       }
 
       function stateToDraft(state) {
@@ -547,7 +548,8 @@
           })),
           settings: {
             ...state.settings,
-            lossWeights: draftLossWeights(state.settings),
+            lossWeights: draftLossMap(state.settings, "lossWeights", 1),
+            lossSlices: draftLossMap(state.settings, "lossSlices", 3),
           },
         };
       }
@@ -773,8 +775,9 @@
         renderLossRows(tbody);
       }
 
-      // Pinned rows for the two loss labels. Same columns as prizes, but no
-      // stock (a loss never runs out) and no remove button.
+      // Pinned rows for the two loss labels. Same columns as prizes, but
+      // Stock holds the slice count (a loss never runs out) and there's no
+      // remove button.
       function renderLossRows(tbody) {
         const shares = computeLossShares();
         const lossPool = 100 - Math.round(draft.settings.masterWinRate);
@@ -810,9 +813,29 @@
           nameCell.querySelector("span").textContent = label;
 
           const stockCell = document.createElement("td");
-          stockCell.className =
-            "py-3 pr-3 pixel-text text-green-500/70 text-lg";
-          stockCell.textContent = "Unlimited";
+          stockCell.className = "py-3 pr-3";
+          const slicesWrap = document.createElement("div");
+          slicesWrap.className = "flex items-center gap-2";
+          const slicesInput = document.createElement("input");
+          slicesInput.type = "number";
+          slicesInput.min = "1";
+          slicesInput.max = String(MAX_LOSS_SLICES);
+          slicesInput.step = "1";
+          slicesInput.value = draft.settings.lossSlices[label];
+          slicesInput.className = "pixel-input w-20 text-center text-2xl py-1";
+          slicesInput.onchange = () => {
+            const value = Math.round(Number(slicesInput.value));
+            draft.settings.lossSlices[label] = Number.isFinite(value)
+              ? Math.min(MAX_LOSS_SLICES, Math.max(1, value))
+              : 1;
+            renderItems();
+            updateDirtyUI();
+          };
+          const slicesNote = document.createElement("span");
+          slicesNote.className = "pixel-text text-green-400/90 text-base";
+          slicesNote.textContent = "on wheel";
+          slicesWrap.append(slicesInput, slicesNote);
+          stockCell.appendChild(slicesWrap);
 
           const weightCell = document.createElement("td");
           weightCell.className = "py-3 pr-3";

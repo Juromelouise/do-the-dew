@@ -1,0 +1,40 @@
+# Self-hosted stand-in for Upstash: Redis + SRH (Upstash-compatible REST API)
+# + Cloudflare tunnel so the Vercel functions can reach it.
+#
+#   docker compose up -d
+#   docker compose logs tunnel   -> copy the https://....trycloudflare.com URL
+#
+# Vercel env: KV_REST_API_URL = tunnel URL, KV_REST_API_TOKEN = same as .env
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # AOF so prize inventory survives restarts/crashes (loses at most ~1s).
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  srh:
+    image: hiett/serverless-redis-http:latest
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${KV_REST_API_TOKEN:?set KV_REST_API_TOKEN in .env}
+      SRH_CONNECTION_STRING: redis://redis:6379
+    ports:
+      - "127.0.0.1:8079:80" # local testing only; the tunnel talks to srh directly
+    depends_on: [redis]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    # Quick tunnel: no Cloudflare account needed, but the URL changes on every restart.
+    command: tunnel --no-autoupdate --url http://srh:80
+    # Stable URL instead: create a tunnel in Cloudflare Zero Trust with a public
+    # hostname -> http://srh:80, put TUNNEL_TOKEN in .env, and use:
+    # command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on: [srh]
+
+volumes:
+  redis-data:

@@ -19,16 +19,19 @@ function isKvConfigured() {
   return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
-async function callKv(parts) {
+// JSON-array body, not /get/key paths: the self-hosted SRH only accepts this
+// form (see api/_lib/wheel-state.js callKvCommand).
+async function callKv(command) {
   const baseUrl = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
 
-  const path = parts.map((part) => encodeURIComponent(String(part))).join("/");
-  const response = await fetch(`${baseUrl}/${path}`, {
+  const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify(command),
   });
 
   if (!response.ok) {

@@ -32,10 +32,16 @@ const DEFAULT_STATE = {
     mouseIntervalMaxMinutes: 240,
     // Relative chance of each loss label whenever a spin lands on a loss.
     // The loss share itself is 100 - masterWinRate; these only split it.
-    // Keys must match LOSS_LABELS. A label weighted 0 never shows.
+    // Keys must match LOSS_LABELS. A label weighted 0 is never landed on.
     lossWeights: {
-      "Try Again": 1,
       "Better Luck Next Time": 1,
+      "Spin The Dew Again": 1,
+    },
+    // How many slices of each loss label the wheel shows (1 to
+    // MAX_LOSS_SLICES). Display only: the odds come from lossWeights.
+    lossSlices: {
+      "Better Luck Next Time": 3,
+      "Spin The Dew Again": 3,
     },
   },
   nextMouseDueAt: null,
@@ -44,7 +50,8 @@ const DEFAULT_STATE = {
 const EVENT_START_HOUR = 10;
 const EVENT_END_HOUR = 22;
 const ENFORCE_EVENT_WINDOW = false;
-const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
+const LOSS_LABELS = ["Better Luck Next Time", "Spin The Dew Again"];
+const MAX_LOSS_SLICES = 10;
 // Item names matching a loss label would be shown as losses by the game
 // client, so they are rejected as inventory keys.
 const RESERVED_NAMES = new Set(LOSS_LABELS.map((label) => label.toLowerCase()));
@@ -91,18 +98,28 @@ function sanitizeSettings(input) {
     settings.mouseIntervalMaxMinutes = swap;
   }
 
-  // Fresh object: the spread above would share DEFAULT_STATE's lossWeights.
+  // Fresh objects: the spread above would share DEFAULT_STATE's maps.
   const sourceLossWeights =
     source.lossWeights && typeof source.lossWeights === "object"
       ? source.lossWeights
       : {};
+  const sourceLossSlices =
+    source.lossSlices && typeof source.lossSlices === "object"
+      ? source.lossSlices
+      : {};
   settings.lossWeights = {};
+  settings.lossSlices = {};
   for (const label of LOSS_LABELS) {
     const raw = Number(sourceLossWeights[label]);
     settings.lossWeights[label] =
       Number.isFinite(raw) && raw >= 0
         ? raw
         : DEFAULT_STATE.settings.lossWeights[label];
+
+    const slices = Math.round(Number(sourceLossSlices[label]));
+    settings.lossSlices[label] = Number.isFinite(slices)
+      ? clamp(slices, 1, MAX_LOSS_SLICES)
+      : DEFAULT_STATE.settings.lossSlices[label];
   }
 
   return settings;
@@ -392,33 +409,9 @@ function ensureMouseSchedule(state, nowMs = Date.now()) {
   state.nextMouseDueAt = nowMs + randomMouseIntervalMs(state.settings);
 }
 
-async function callKv(parts) {
-  const baseUrl = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-
-  if (!baseUrl || !token) {
-    throw new Error(
-      "KV is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN."
-    );
-  }
-
-  const path = parts.map((part) => encodeURIComponent(String(part))).join("/");
-  const response = await fetch(`${baseUrl}/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`KV command failed with status ${response.status}.`);
-  }
-
-  return response.json();
-}
-
-// Single command sent as a JSON-array body (Upstash REST format). Used for
-// EVAL, whose script/payload arguments don't fit the path-segment form.
+// Single command sent as a JSON-array body (Upstash REST format). Works on
+// Upstash and on the self-hosted SRH (docker-compose.yml), which rejects
+// path-style commands like /get/key.
 async function callKvCommand(command) {
   const baseUrl = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -483,7 +476,7 @@ async function getState() {
     return getLocalFallbackState();
   }
 
-  const result = await callKv(["get", STATE_KEY]);
+  const result = await callKvCommand(["get", STATE_KEY]);
   const raw = result && result.result;
   if (!raw) {
     const fresh = sanitizeState(cloneDefaults());
@@ -501,7 +494,7 @@ async function getState() {
     }
 
     // Someone else initialized (and possibly mutated) the state first.
-    const retry = await callKv(["get", STATE_KEY]);
+    const retry = await callKvCommand(["get", STATE_KEY]);
     const retryRaw = retry && retry.result;
     if (retryRaw) {
       const parsedRetry =
@@ -528,7 +521,7 @@ async function setState(state) {
     return;
   }
 
-  await callKv(["set", STATE_KEY, JSON.stringify(sanitized)]);
+  await callKvCommand(["set", STATE_KEY, JSON.stringify(sanitized)]);
 }
 
 // Compare-and-swap write: succeeds only if nobody else wrote since this state

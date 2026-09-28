@@ -473,15 +473,25 @@
         return arr;
       }
 
+      // One entry per loss slice. /admin.html sets how many slices each label
+      // gets (settings.lossSlices, min 1 so a losing spin always has a slice
+      // to land on); 3 each until the server has sent settings.
+      function getLossSlices() {
+        const counts =
+          serverSettings && serverSettings.lossSlices
+            ? serverSettings.lossSlices
+            : {};
+        return LOSS_LABELS.flatMap((label) => {
+          const count = Number(counts[label]);
+          return Array(Number.isInteger(count) && count > 0 ? count : 3).fill(
+            label
+          );
+        });
+      }
+
       function buildWheelItems(productNames) {
         const products = shuffleArray(productNames);
-        // Loss slices scale with the item count so the wheel stays balanced,
-        // and always include both loss labels.
-        const lossCount = Math.max(3, Math.min(6, products.length + 1));
-        const losses = [];
-        for (let i = 0; i < lossCount; i++) {
-          losses.push(LOSS_LABELS[i % LOSS_LABELS.length]);
-        }
+        const losses = getLossSlices();
 
         const totalSlices = products.length + losses.length;
         const wheel = new Array(totalSlices);
@@ -514,8 +524,11 @@
         );
       }
 
+      // Includes the loss slice counts so an admin change redraws the wheel.
       function getWheelSignature(productNames) {
-        return [...productNames].sort().join("|");
+        return (
+          [...productNames].sort().join("|") + "#" + getLossSlices().join("|")
+        );
       }
 
       function rebuildWheel(extraNames = []) {
@@ -909,7 +922,7 @@
       const MOUSE_NAME_PATTERN = /mouse/i;
       const MOUSE_INTERVAL_MIN_MS = 135 * 60 * 1000;
       const MOUSE_INTERVAL_MAX_MS = 240 * 60 * 1000;
-      const LOSS_LABELS = ["Try Again", "Better Luck Next Time"];
+      const LOSS_LABELS = ["Better Luck Next Time", "Spin The Dew Again"];
       const ESTIMATED_TOTAL_PLAYERS = 500;
       const EVENT_DURATION_HOURS = EVENT_END_HOUR - EVENT_START_HOUR;
       const ESTIMATED_SPINS_PER_HOUR = Math.ceil(
@@ -1492,12 +1505,12 @@
         const resultPrize = document.getElementById("resultPrize");
         const closeModal = document.getElementById("closeModal");
 
-        // Exact match only: an admin-added prize named e.g. "Try Again
-        // Sticker" is a real win, not a loss.
+        // Exact match only: an admin-added prize named e.g. "Spin The Dew
+        // Again Sticker" is a real win, not a loss.
         const isLoss = LOSS_LABELS.includes(winnerItem);
 
         if (isLoss) {
-          // Try Again Theme
+          // Loss Theme
           resultContent.className =
             "pixel-panel text-center p-8 md:p-14 border-4 border-green-800 bg-green-950 shadow-[0_0_80px_rgba(20,83,45,0.8)] transform scale-50 transition-transform duration-500 w-[90%] max-w-xl relative";
           resultTitle.textContent = "YOU GOT NO DEW!";
