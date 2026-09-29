@@ -1583,19 +1583,28 @@
         rebuildWheel();
         spinBtn.addEventListener("click", spinWheel);
 
-        // Keep the wheel synced with /admin.html while the tablet idles.
-        setInterval(async () => {
-          if (isSpinning) {
-            return;
+        // Keep the wheel synced with /admin.html: a save there shows up here
+        // within a few seconds. The next poll is scheduled only after the
+        // previous one finishes, so slow responses never pile up.
+        // ponytail: polling, ~1,200 requests/hour per open wheel screen;
+        // raise the interval if that volume ever matters.
+        const SYNC_INTERVAL_MS = 3000;
+        async function syncLoop() {
+          try {
+            if (!isSpinning) {
+              const epochBefore = stateSyncEpoch;
+              const refreshed = await fetchServerState({
+                applyGuard: () => !isSpinning && stateSyncEpoch === epochBefore,
+              });
+              if (refreshed) {
+                rebuildWheelIfChanged();
+              }
+            }
+          } finally {
+            setTimeout(syncLoop, SYNC_INTERVAL_MS);
           }
-          const epochBefore = stateSyncEpoch;
-          const refreshed = await fetchServerState({
-            applyGuard: () => !isSpinning && stateSyncEpoch === epochBefore,
-          });
-          if (refreshed) {
-            rebuildWheelIfChanged();
-          }
-        }, 20000);
+        }
+        setTimeout(syncLoop, SYNC_INTERVAL_MS);
       })();
     </script>
   </body>
