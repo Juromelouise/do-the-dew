@@ -5,7 +5,9 @@
   "scripts": {
     "local": "node scripts/pvp-local-server.js",
     "pvp:local": "node scripts/pvp-local-server.js",
-    "build:pvp-css": "tailwindcss -i tailwind.input.css -o pvp.tailwind.css --content pvp.html --minify"
+    "build:pvp-css": "tailwindcss -i tailwind.input.css -o pvp.tailwind.css --content pvp.html --minify",
+    "build:index-css": "tailwindcss -i tailwind.input.css -o index.tailwind.css --content index.html --minify",
+    "build:admin-css": "tailwindcss -i tailwind.input.css -o admin.tailwind.css --content admin.html --minify"
   },
   "dependencies": {
     "xlsx": "^0.18.5"
