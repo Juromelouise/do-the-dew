@@ -8,9 +8,24 @@
     />
     <title>Do The Dew</title>
     <link rel="icon" type="image/x-icon" href="logo_mtdew.png" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Montserrat:ital,wght@1,900&family=Press+Start+2P&display=swap");
+      @font-face {
+        font-family: "Black Ops One";
+        font-display: swap;
+        src: url("fonts/black-ops-one.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-style: italic;
+        font-weight: 900;
+        font-display: swap;
+        src: url("fonts/montserrat-900-italic.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Press Start 2P";
+        font-display: swap;
+        src: url("fonts/press-start-2p.woff2") format("woff2");
+      }
 
       body {
         background-color: #050505;
@@ -90,6 +105,9 @@
         background: radial-gradient(circle at center, #112211 0%, #000000 100%);
       }
     </style>
+    <!-- Local build so the game runs with no internet: npm run build:index-css.
+         Loaded after the page styles, same order the Tailwind CDN injected. -->
+    <link rel="stylesheet" href="index.tailwind.css" />
   </head>
 
   <body class="flex items-center justify-center w-screen h-screen">
