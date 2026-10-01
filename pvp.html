@@ -632,7 +632,6 @@
       let matchStartLocal = 0;
       let matchStartServer = 0;
       let oppOutOfMatchSince = 0;
-      let lastMemFlag = false;
 
       let returnTimer = null;
       let countdownTicker = null;
@@ -711,7 +710,6 @@
             if (rtt < bestRtt) bestRtt = rtt;
           }
           lastGoodSyncAt = t1;
-          lastMemFlag = Boolean(json.mem);
 
           handleServerState(json.opp, json.match, json.now);
         } catch (e) {
@@ -1343,16 +1341,6 @@
 
         const online = Date.now() - lastGoodSyncAt < 5000;
         const oppOnline = Date.now() - lastOppSeenWall < 8000;
-
-        // Deployed server without KV configured: each serverless instance
-        // has its own memory, so the laptops would never see each other.
-        if (online && lastMemFlag && location.protocol === "https:") {
-          connStatus.innerText =
-            "SERVER STORAGE NOT CONFIGURED — SET KV ENV VARS";
-          connStatus.className =
-            "mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400";
-          return;
-        }
 
         if (!online) {
           connStatus.innerText = "CONNECTING TO SERVER...";

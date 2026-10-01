@@ -1,4 +1,5 @@
-const STATE_KEY = "dew-wheel-state-v16";
+const fs = require("fs");
+const path = require("path");
 
 const DEFAULT_STATE = {
   inventory: {
@@ -409,151 +410,57 @@ function ensureMouseSchedule(state, nowMs = Date.now()) {
   state.nextMouseDueAt = nowMs + randomMouseIntervalMs(state.settings);
 }
 
-// Single command sent as a JSON-array body (Upstash REST format). Works on
-// Upstash and on the self-hosted SRH (docker-compose.yml), which rejects
-// path-style commands like /get/key.
-async function callKvCommand(command) {
-  const baseUrl = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+// State lives in memory and is mirrored to this file after every write, so
+// prize stock survives server restarts. Delete the file to reset to
+// DEFAULT_STATE. Single process only (scripts/pvp-local-server.js).
+const STATE_FILE = path.join(__dirname, "..", "..", "data", "wheel-state.json");
 
-  if (!baseUrl || !token) {
-    throw new Error(
-      "KV is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN."
-    );
+// Missing file = first run. A corrupt file throws instead of falling back to
+// defaults, which would overwrite the real stock counts on the next spin.
+function readStateFile() {
+  try {
+    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
   }
-
-  const response = await fetch(baseUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(command),
-  });
-
-  if (!response.ok) {
-    throw new Error(`KV command failed with status ${response.status}.`);
-  }
-
-  return response.json();
 }
 
-// Writes the blob only if the stored version still matches expectedVersion
-// (legacy blobs without a version always match). Returns 1 on write, 0 on
-// conflict.
-const CAS_SCRIPT = `
-local cur = redis.call('GET', KEYS[1])
-if cur then
-  local ok, decoded = pcall(cjson.decode, cur)
-  if ok and type(decoded) == 'table' and decoded.version ~= nil then
-    if tonumber(decoded.version) ~= tonumber(ARGV[2]) then
-      return 0
-    end
-  end
-end
-redis.call('SET', KEYS[1], ARGV[1])
-return 1
-`;
-
-function isKvConfigured() {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
-
-function getLocalFallbackState() {
-  if (!localStateCache) {
-    localStateCache = cloneDefaults();
-    ensureMouseSchedule(localStateCache);
-  }
-
-  const sanitized = sanitizeState(localStateCache);
-  ensureMouseSchedule(sanitized);
-  localStateCache = sanitized;
-  return sanitized;
+// Temp file + rename so a crash mid-write can't leave a half-written file.
+function writeStateFile(state) {
+  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+  const tempFile = `${STATE_FILE}.tmp`;
+  fs.writeFileSync(tempFile, JSON.stringify(state, null, 2));
+  fs.renameSync(tempFile, STATE_FILE);
 }
 
 async function getState() {
-  if (!isKvConfigured()) {
-    return getLocalFallbackState();
+  if (!localStateCache) {
+    localStateCache = readStateFile() || cloneDefaults();
   }
 
-  const result = await callKvCommand(["get", STATE_KEY]);
-  const raw = result && result.result;
-  if (!raw) {
-    const fresh = sanitizeState(cloneDefaults());
-    ensureMouseSchedule(fresh);
-    // SET NX: only the first concurrent initializer wins; a plain SET here
-    // could land late and clobber a CAS write that already happened.
-    const setResult = await callKvCommand([
-      "SET",
-      STATE_KEY,
-      JSON.stringify(fresh),
-      "NX",
-    ]);
-    if (setResult && setResult.result === "OK") {
-      return fresh;
-    }
-
-    // Someone else initialized (and possibly mutated) the state first.
-    const retry = await callKvCommand(["get", STATE_KEY]);
-    const retryRaw = retry && retry.result;
-    if (retryRaw) {
-      const parsedRetry =
-        typeof retryRaw === "string" ? JSON.parse(retryRaw) : retryRaw;
-      const sanitizedRetry = sanitizeState(parsedRetry);
-      ensureMouseSchedule(sanitizedRetry);
-      return sanitizedRetry;
-    }
-
-    return fresh;
-  }
-
-  const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-  const sanitized = sanitizeState(parsed);
-  ensureMouseSchedule(sanitized);
-  return sanitized;
-}
-
-async function setState(state) {
-  const sanitized = sanitizeState(state);
-
-  if (!isKvConfigured()) {
-    localStateCache = sanitized;
-    return;
-  }
-
-  await callKvCommand(["set", STATE_KEY, JSON.stringify(sanitized)]);
+  localStateCache = sanitizeState(localStateCache);
+  ensureMouseSchedule(localStateCache);
+  // Copy: callers mutate the result before tryWriteState decides whether the
+  // write lands, so a failed write must not leak into the cache.
+  return sanitizeState(localStateCache);
 }
 
 // Compare-and-swap write: succeeds only if nobody else wrote since this state
 // was read (state.version unchanged). Returns the persisted sanitized state,
 // or null on version conflict.
 async function tryWriteState(state) {
-  const expectedVersion = Number.isFinite(state.version) ? state.version : 0;
-  const sanitized = sanitizeState(state);
-  sanitized.version = expectedVersion + 1;
-
-  if (!isKvConfigured()) {
-    const currentVersion =
-      localStateCache && Number.isFinite(localStateCache.version)
-        ? localStateCache.version
-        : 0;
-    if (localStateCache && currentVersion !== expectedVersion) {
-      return null;
-    }
-    localStateCache = sanitized;
-    return sanitized;
+  if (state.version !== localStateCache.version) {
+    return null;
   }
 
-  const result = await callKvCommand([
-    "EVAL",
-    CAS_SCRIPT,
-    "1",
-    STATE_KEY,
-    JSON.stringify(sanitized),
-    String(expectedVersion),
-  ]);
-
-  return result && Number(result.result) === 1 ? sanitized : null;
+  const sanitized = sanitizeState(state);
+  sanitized.version = state.version + 1;
+  writeStateFile(sanitized);
+  localStateCache = sanitized;
+  return sanitized;
 }
 
 // Read-modify-write with optimistic concurrency: `mutate(state)` is applied to
@@ -591,6 +498,5 @@ module.exports = {
   pickPrizeAndMutateState,
   randomMouseIntervalMs,
   getState,
-  setState,
   saveStateWithRetry,
 };

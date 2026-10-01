@@ -2,9 +2,9 @@
 //
 // Serves the repo statically AND emulates the Vercel /api/pvp function in
 // one process, so two browser tabs (or two laptops on the same LAN) can
-// play a full match without deploying. Without KV env vars, api/pvp.js
-// automatically uses its in-memory store, which works here because every
-// client talks to this single process.
+// play a full match without deploying. PvP state is in-memory, which works
+// because every client talks to this single process; wheel/admin state is
+// saved to data/wheel-state.json.
 //
 // Run:  node scripts/pvp-local-server.js [port]
 
@@ -136,7 +136,5 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(
     `  (second laptop on same LAN: use this machine's IP instead of localhost)`
   );
-  console.log(
-    `  Wheel/admin state is in-memory here (no KV) and resets on restart.`
-  );
+  console.log(`  Wheel/admin state is saved to data/wheel-state.json.`);
 });

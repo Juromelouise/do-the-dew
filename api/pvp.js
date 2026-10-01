@@ -7,41 +7,14 @@
 // once both sides are ready, and clears it (action "clear") when returning
 // to the lobby.
 //
-// Storage uses the same Vercel KV (Upstash REST) setup as the spin wheel,
-// with an in-memory fallback when KV env vars are absent (local testing via
-// scripts/pvp-local-server.js, where both clients share one process).
+// Storage is in-memory: both laptops talk to the one local server process
+// (scripts/pvp-local-server.js), and match state is short-lived anyway.
 
 const PLAYER_TTL_S = 60;
 const MATCH_TTL_S = 900;
 const MAX_DATA_JSON = 2000;
 
-function isKvConfigured() {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
-
-// JSON-array body, not /get/key paths: the self-hosted SRH only accepts this
-// form (see api/_lib/wheel-state.js callKvCommand).
-async function callKv(command) {
-  const baseUrl = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-
-  const response = await fetch(baseUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(command),
-  });
-
-  if (!response.ok) {
-    throw new Error(`KV command failed with status ${response.status}.`);
-  }
-
-  return response.json();
-}
-
-// In-memory fallback store (single-process local testing only)
+// Single-process in-memory store with per-key TTL
 const localStore = new Map();
 
 function localGet(key) {
@@ -62,30 +35,6 @@ function localSet(key, value, ttlS) {
     }
   }
   localStore.set(key, { value, expiresAt: Date.now() + ttlS * 1000 });
-}
-
-async function kvGet(key) {
-  if (!isKvConfigured()) return localGet(key);
-  const result = await callKv(["get", key]);
-  const raw = result && result.result;
-  if (!raw) return null;
-  return typeof raw === "string" ? JSON.parse(raw) : raw;
-}
-
-async function kvSet(key, value, ttlS) {
-  if (!isKvConfigured()) {
-    localSet(key, value, ttlS);
-    return;
-  }
-  await callKv(["set", key, JSON.stringify(value), "EX", String(ttlS)]);
-}
-
-async function kvDel(key) {
-  if (!isKvConfigured()) {
-    localStore.delete(key);
-    return;
-  }
-  await callKv(["del", key]);
 }
 
 function keyPlayer(room, player) {
@@ -149,16 +98,12 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      await kvSet(keyPlayer(room, player), { data, seen: now }, PLAYER_TTL_S);
+      localSet(keyPlayer(room, player), { data, seen: now }, PLAYER_TTL_S);
       const other = player === 1 ? 2 : 1;
-      const [opp, match] = await Promise.all([
-        kvGet(keyPlayer(room, other)),
-        kvGet(keyMatch(room)),
-      ]);
+      const opp = localGet(keyPlayer(room, other));
+      const match = localGet(keyMatch(room));
 
-      // mem flags the in-memory fallback so a deployed client can warn that
-      // KV env vars are missing (per-instance memory cannot sync laptops).
-      sendJson(res, 200, { ok: true, now, opp, match, mem: !isKvConfigured() });
+      sendJson(res, 200, { ok: true, now, opp, match });
       return;
     }
 
@@ -178,7 +123,7 @@ module.exports = async function handler(req, res) {
         sendJson(res, 400, { ok: false, error: "invalid match record" });
         return;
       }
-      await kvSet(
+      localSet(
         keyMatch(room),
         { id: m.id, seed: m.seed, startAt: m.startAt, createdAt: now },
         MATCH_TTL_S
@@ -191,9 +136,9 @@ module.exports = async function handler(req, res) {
       // Only delete the match the caller thinks is over — a delayed clear
       // must not wipe out a newer live match record.
       const matchId = typeof body.matchId === "number" ? body.matchId : null;
-      const existing = await kvGet(keyMatch(room));
+      const existing = localGet(keyMatch(room));
       if (!existing || matchId === null || existing.id === matchId) {
-        await kvDel(keyMatch(room));
+        localStore.delete(keyMatch(room));
       }
       sendJson(res, 200, { ok: true, now });
       return;

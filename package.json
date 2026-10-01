@@ -7,7 +7,8 @@
     "pvp:local": "node scripts/pvp-local-server.js",
     "build:pvp-css": "tailwindcss -i tailwind.input.css -o pvp.tailwind.css --content pvp.html --minify",
     "build:index-css": "tailwindcss -i tailwind.input.css -o index.tailwind.css --content index.html --minify",
-    "build:admin-css": "tailwindcss -i tailwind.input.css -o admin.tailwind.css --content admin.html --minify"
+    "build:admin-css": "tailwindcss -i tailwind.input.css -o admin.tailwind.css --content admin.html --minify",
+    "build:wheel-css": "tailwindcss -i tailwind.input.css -o tailwind.output.css --content spin_the_wheel.html --minify"
   },
   "dependencies": {
     "xlsx": "^0.18.5"
